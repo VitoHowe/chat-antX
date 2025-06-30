@@ -1,0 +1,26 @@
+/* 确保布局容器没有默认的margin和padding */
+.navs {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  ul {
+    padding: 0;
+    list-style: none;
+    display: flex;
+  }
+  li {
+    // margin-right: 1em;
+  }
+}
+
+/* 重置body和html的默认样式，确保全屏显示 */
+:global(html, body) {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+:global(#root) {
+  height: 100vh;
+}
