@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   XProvider,
   Bubble,
@@ -19,24 +19,31 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import type { BubbleProps } from "@ant-design/x";
+import { XRequest, useXAgent } from "@ant-design/x";
+interface YourMessageType {
+  role: string;
+  content: string;
+}
 export default () => {
   const [value, setValue] = React.useState("");
   const [loading, setLoading] = React.useState<boolean>(false);
   const listRef = React.useRef<GetRef<typeof Bubble.List>>(null);
-  const rolesAsObject: GetProp<typeof Bubble.List, "roles"> = {
-    ai: {
-      placement: "start",
-      avatar: { icon: <UserOutlined />, style: { background: "#fde3cf" } },
-      typing: { step: 5, interval: 20 },
-      style: {
-        maxWidth: 600,
-      },
-    },
-    user: {
-      placement: "end",
-      avatar: { icon: <UserOutlined />, style: { background: "#87d068" } },
-    },
-  };
+  const [lines, setLines] = React.useState<Record<string, string>[]>([]);
+  const [itemChat, setItemChat] = React.useState<Record<string, string>[]>([]);
+  const abortController = useRef<AbortController | null>(null);
+  const isFirstRender = useRef(true);
+  const [agent] = useXAgent<YourMessageType>({
+    baseURL: "https://v2.voct.top/v1/chat/completions",
+    model: "gpt-4.1-mini",
+    dangerouslyApiKey: "Bearer fo-5ipveme6TFstAW9r-V4_PUj-dV7i78FI",
+    /** 🔥🔥 Its dangerously! */
+  });
+  const exampleRequest = XRequest({
+    baseURL: "https://v2.voct.top/v1/chat/completions",
+    model: "deepseek-chat",
+    dangerouslyApiKey: "Bearer fo-5ipveme6TFstAW9r-V4_PUj-dV7i78FI",
+    /** 🔥🔥 Its dangerously! */
+  });
   const rolesAsFunction = (bubbleData: BubbleProps, index: number) => {
     const RenderIndex: BubbleProps["messageRender"] = (content) => (
       <Flex>
@@ -48,32 +55,119 @@ export default () => {
         return {
           placement: "start" as const,
           avatar: { icon: <UserOutlined />, style: { background: "#fde3cf" } },
-          typing: { step: 5, interval: 20 },
+          typing: { step: 1, interval: 20 },
           style: {
             maxWidth: 600,
           },
-          messageRender: RenderIndex,
         };
       case "user":
         return {
           placement: "end" as const,
           avatar: { icon: <UserOutlined />, style: { background: "#87d068" } },
-          messageRender: RenderIndex,
         };
       default:
-        return { messageRender: RenderIndex };
+        return {};
     }
+  };
+  const request = async () => {
+    // setStatus('pending');
+    // 添加用户消息到聊天记录
+    setItemChat((pre) => [...pre, { role: "user", content: value }]);
+
+    setValue("");
+    setLines([]);
+    setLoading(true);
+    message.info("Send message!");
+    agent.request(
+      {
+        messages: [{ role: "user", content: value }],
+        stream: true,
+      },
+      {
+        onSuccess: () => {
+          setLoading(false);
+          message.success("Send message successfully!");
+        },
+        onError: (error) => {
+          if (error.name === "AbortError") {
+            setLoading(false);
+            message.error("Send message AbortError!");
+          }
+          setLoading(false);
+          message.error("Send message Error!");
+        },
+        onUpdate: (msg) => {
+          setLines((pre) => [...pre, msg]);
+        },
+        onStream: (controller) => {
+          abortController.current = controller;
+        },
+      },
+      new TransformStream<string, any>({
+        transform(chunk, controller) {
+          const DEFAULT_KV_SEPARATOR = "data: ";
+          const DEFAULT_STREAM_SEPARATOR = "\n\n";
+          const parts = chunk.split(DEFAULT_STREAM_SEPARATOR);
+
+          parts.forEach((part) => {
+            const separatorIndex = part.indexOf(DEFAULT_KV_SEPARATOR);
+            const value = part.slice(
+              separatorIndex + DEFAULT_KV_SEPARATOR.length
+            );
+            try {
+              const modalMessage = JSON.parse(value || "{}");
+              const content = modalMessage?.choices?.[0]?.delta?.content || "";
+              controller.enqueue(content);
+            } catch (error) {
+              controller.enqueue("");
+            }
+          });
+        },
+      })
+    );
+    // await exampleRequest.create(
+    //   {
+    //     messages: [{ role: "user", content: value }],
+    //     stream: true,
+    //   },
+    //   {
+    //     onSuccess: () => {
+    //       setLoading(false);
+    //       message.success("Send message successfully!");
+    //       console.log("onSuccess", lines);
+    //     },
+    //     onError: (error) => {
+    //       setLoading(false);
+    //       message.success("Send message AbortError!");
+    //     },
+    //     onUpdate: (msg) => {
+    //       // setLines((pre) => [...pre, msg]);
+    //       console.log(msg);
+    //     },
+    //     onStream: (controller) => {
+    //       abortController.current = controller;
+    //     },
+    //   },
+    //   new TransformStream<string, string>({
+    //     transform(chunk, controller) {
+    //       controller.enqueue(chunk);
+    //     },
+    //   })
+    // );
   };
   // Mock send message
   React.useEffect(() => {
-    if (loading) {
-      const timer = setTimeout(() => {
-        setLoading(false);
-        message.success("Send message successfully!");
-      }, 3000);
-      return () => {
-        clearTimeout(timer);
-      };
+    // 跳过首次渲染
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    if (!loading) {
+      // 将最新的lines数据格式化为{ role: "ai", content: ... }并添加到itemChat
+      const content = lines.join("");
+      console.log(content, "content");
+      setItemChat((pre) => [...pre, { role: "ai", content }]);
     }
   }, [loading]);
   return (
@@ -126,13 +220,12 @@ export default () => {
                 scrollBehavior: "smooth",
               }}
               roles={rolesAsFunction}
-              items={Array.from({ length: 4 }).map((_, i) => {
-                const isAI = !!(i % 2);
-                const content = isAI
-                  ? "Mock AI content. ".repeat(20)
-                  : "Mock user content.";
-
-                return { key: i, role: isAI ? "ai" : "user", content };
+              items={itemChat.map((item, i) => {
+                return {
+                  key: i,
+                  role: item.role || "user",
+                  content: item.content || "",
+                };
               })}
             />
             <Prompts
@@ -165,9 +258,7 @@ export default () => {
                     }}
                     onKeyDown={onKeyDown}
                     onSubmit={() => {
-                      setValue("");
-                      setLoading(true);
-                      message.info("Send message!");
+                      request();
                     }}
                     onCancel={() => {
                       setLoading(false);
