@@ -10,3 +10,4 @@
 
 # 敏感配置文件
 src/config/api.ts
+src/config/env.ts

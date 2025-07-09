@@ -8,7 +8,16 @@ import {
   Suggestion,
   ThoughtChain,
 } from "@ant-design/x";
-import { Flex, Divider, Radio, Card, Typography, message, Select } from "antd";
+import {
+  Flex,
+  Divider,
+  Radio,
+  Card,
+  Typography,
+  message,
+  Select,
+  Space,
+} from "antd";
 
 import type { ConfigProviderProps, GetProp, GetRef } from "antd";
 import {
@@ -21,6 +30,7 @@ import {
 import type { BubbleProps } from "@ant-design/x";
 import { useXAgent, useXChat } from "@ant-design/x";
 import { API_CONFIG } from "../config/api";
+import { ApiService, ModelSource, Model } from "../services/api.service";
 
 interface YourMessageType {
   role: string;
@@ -40,12 +50,86 @@ export default () => {
   >([]);
   const [selectedModel, setSelectedModel] =
     React.useState<string>("gpt-4.1-mini");
+  const [selectedModelSource, setSelectedModelSource] =
+    React.useState<string>("");
+  const [SourceOptions, setSourceOptions] = React.useState<
+    { value: string; label: string }[]
+  >([]);
   const abortController = useRef<AbortController | null>(null);
-  const isFirstRender = useRef(true);
+
+  // 获取模型源列表
+  React.useEffect(() => {
+    // 获取模型源列表
+    const fetchModelSources = async () => {
+      try {
+        const sources = await ApiService.getModelSources();
+
+        if (sources.length > 0) {
+          // 转换为Select组件需要的格式
+          const options = sources.map((item) => ({
+            value: String(item.type),
+            label: item.name,
+          }));
+
+          setSourceOptions(options);
+
+          // 默认选择第一个
+          if (options.length > 0) {
+            setSelectedModelSource(options[0].value);
+          }
+        }
+      } catch (error) {
+        console.error("获取模型源列表失败:", error);
+        message.error("获取模型源列表失败");
+      }
+    };
+
+    fetchModelSources();
+  }, []);
+
+  // 获取模型列表
+  React.useEffect(() => {
+    // 确保selectedModelSource有值时才请求
+    if (!selectedModelSource) return;
+
+    // 重置模型选择
+    setSelectedModel("");
+    setFilteredOptions([]);
+
+    // 获取模型列表
+    const fetchModels = async () => {
+      try {
+        const models = await ApiService.getModels(selectedModelSource);
+
+        if (models.length > 0) {
+          const options = models.map((item) => ({
+            value: item.root || item.id,
+            label: item.id || item.root,
+          }));
+
+          setModelOptions(options);
+          setFilteredOptions(options);
+
+          // 默认选择第一个
+          if (options.length > 0) {
+            setSelectedModel(options[0].value);
+          }
+        }
+      } catch (error) {
+        console.error("获取模型列表失败:", error);
+        message.error("获取模型列表失败");
+      }
+    };
+
+    fetchModels();
+  }, [selectedModelSource]);
 
   const onChange = (value: string) => {
-    // console.log(`selected ${value}`);
     setSelectedModel(value);
+  };
+
+  const onChangeSource = (value: string) => {
+    setSelectedModelSource(value);
   };
 
   const onSearch = (value: string) => {
@@ -64,7 +148,7 @@ export default () => {
   const [agent] = useXAgent<YourMessageType>({
     baseURL: API_CONFIG.baseURL,
     model: selectedModel,
-    dangerouslyApiKey: API_CONFIG.apiKey,
+    // dangerouslyApiKey: API_CONFIG.apiKey,
     /** 🔥🔥 Its dangerously! */
   });
   const { onRequest, messages } = useXChat({
@@ -147,61 +231,6 @@ export default () => {
     }
   };
 
-  // Mock send message
-  React.useEffect(() => {
-    fetch(API_CONFIG.baseModelURL, {
-      method: "GET",
-      headers: {
-        Authorization: API_CONFIG.apiKey,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log(data);
-        // 将API数据转换为Select组件需要的格式;
-        if (data && data.data && Array.isArray(data.data)) {
-          const options = data.data.map((item: any, index: number) => ({
-            value: item.root || item.id,
-            label: item.id || item.root,
-          }));
-          setModelOptions(options);
-          setFilteredOptions(options); // 初始化过滤选项
-        }
-      })
-      .catch((error) => console.error("Error:", error));
-
-    // fetch("http://localhost:3000/api/users", {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify({
-    //     username: "JohnDoe",
-    //     password: "123456",
-    //     email: "john.doe@example.com",
-    //   }),
-    // })
-    //   .then((response) => response.json())
-    //   .then((data) => {
-    //     console.log(data);
-    //   })
-    //   .catch((error) => console.error("Error:", error));
-  }, []);
-
-  React.useEffect(() => {
-    // 跳过首次渲染
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-
-    // if (!loading) {
-    //   // 将最新的lines数据格式化为{ role: "assistant", content: ... }并添加到itemChat
-    //   const content = lines.join("");
-    //   console.log(content, "content");
-    //   setItemChat((pre) => [...pre, { role: "assistant", content }]);
-    // }
-  }, [loading]);
   return (
     <>
       <XProvider>
@@ -274,22 +303,33 @@ export default () => {
                 },
               ]}
             />
-            <Select
-              showSearch
-              placeholder="Select a model"
-              value={selectedModel}
-              optionFilterProp="label"
-              onChange={onChange}
-              onSearch={onSearch}
-              options={filteredOptions}
-              style={{ width: 300 }}
-            />
+            <Space wrap>
+              <Select
+                placeholder="Select a modelSource"
+                value={selectedModelSource}
+                optionFilterProp="label"
+                onChange={onChangeSource}
+                options={SourceOptions}
+                style={{ width: 200 }}
+              />
+              <Select
+                showSearch
+                placeholder="Select a model"
+                value={selectedModel}
+                optionFilterProp="label"
+                onChange={onChange}
+                onSearch={onSearch}
+                options={filteredOptions}
+                style={{ width: 300 }}
+              />
+            </Space>
+
             <Suggestion items={[{ label: "Write a report", value: "report" }]}>
               {({ onTrigger, onKeyDown }) => {
                 return (
                   <Sender
                     value={value}
-                    loading={loading}
+                    loading={agent.isRequesting()}
                     onChange={(nextVal) => {
                       if (nextVal === "/") {
                         onTrigger();
@@ -299,12 +339,12 @@ export default () => {
                       setValue(nextVal);
                     }}
                     onKeyDown={onKeyDown}
-                    onSubmit={(content) => {
+                    onSubmit={(nextContent) => {
                       onRequest({
                         stream: true,
                         message: {
                           role: "user",
-                          content: content,
+                          content: nextContent,
                         },
                       });
                       setValue("");
