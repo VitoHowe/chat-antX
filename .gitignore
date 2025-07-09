@@ -7,3 +7,6 @@
 /src/.umi-test
 /dist
 .swc
+
+# 敏感配置文件
+src/config/api.ts

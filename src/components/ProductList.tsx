@@ -8,7 +8,7 @@ import {
   Suggestion,
   ThoughtChain,
 } from "@ant-design/x";
-import { Flex, Divider, Radio, Card, Typography, message } from "antd";
+import { Flex, Divider, Radio, Card, Typography, message, Select } from "antd";
 
 import type { ConfigProviderProps, GetProp, GetRef } from "antd";
 import {
@@ -19,7 +19,9 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import type { BubbleProps } from "@ant-design/x";
-import { XRequest, useXAgent } from "@ant-design/x";
+import { useXAgent, useXChat } from "@ant-design/x";
+import { API_CONFIG } from "../config/api";
+
 interface YourMessageType {
   role: string;
   content: string;
@@ -30,28 +32,103 @@ export default () => {
   const listRef = React.useRef<GetRef<typeof Bubble.List>>(null);
   const [lines, setLines] = React.useState<Record<string, string>[]>([]);
   const [itemChat, setItemChat] = React.useState<Record<string, string>[]>([]);
+  const [modelOptions, setModelOptions] = React.useState<
+    { value: string; label: string }[]
+  >([]);
+  const [filteredOptions, setFilteredOptions] = React.useState<
+    { value: string; label: string }[]
+  >([]);
+  const [selectedModel, setSelectedModel] =
+    React.useState<string>("gpt-4.1-mini");
   const abortController = useRef<AbortController | null>(null);
   const isFirstRender = useRef(true);
+
+  const onChange = (value: string) => {
+    // console.log(`selected ${value}`);
+    setSelectedModel(value);
+  };
+
+  const onSearch = (value: string) => {
+    // console.log("search:", value);
+    if (!value) {
+      setFilteredOptions(modelOptions);
+    } else {
+      const filtered = modelOptions.filter(
+        (option) =>
+          option.label.toLowerCase().includes(value.toLowerCase()) ||
+          option.value.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredOptions(filtered);
+    }
+  };
   const [agent] = useXAgent<YourMessageType>({
-    baseURL: "https://v2.voct.top/v1/chat/completions",
-    model: "gpt-4.1-mini",
-    dangerouslyApiKey: "Bearer fo-5ipveme6TFstAW9r-V4_PUj-dV7i78FI",
+    baseURL: API_CONFIG.baseURL,
+    model: selectedModel,
+    dangerouslyApiKey: API_CONFIG.apiKey,
     /** 🔥🔥 Its dangerously! */
   });
-  const exampleRequest = XRequest({
-    baseURL: "https://v2.voct.top/v1/chat/completions",
-    model: "deepseek-chat",
-    dangerouslyApiKey: "Bearer fo-5ipveme6TFstAW9r-V4_PUj-dV7i78FI",
-    /** 🔥🔥 Its dangerously! */
+  const { onRequest, messages } = useXChat({
+    agent,
+    requestFallback: (_, { error }) => {
+      if (error.name === "AbortError") {
+        return {
+          content: "Request is aborted",
+          role: "assistant",
+        };
+      }
+      return {
+        content: "Request failed, please try again!",
+        role: "assistant",
+      };
+    },
+    requestPlaceholder: () => {
+      return {
+        content: "Please wait...",
+        role: "assistant",
+      };
+    },
+    transformMessage: (info) => {
+      const { originMessage, chunk } = info || {};
+      let currentContent = "";
+      let currentThink = "";
+      try {
+        if (chunk?.data && !chunk?.data.includes("DONE")) {
+          const message = JSON.parse(chunk?.data);
+          currentThink = message?.choices?.[0]?.delta?.reasoning_content || "";
+          currentContent = message?.choices?.[0]?.delta?.content || "";
+        }
+      } catch (error) {
+        console.error(error);
+      }
+
+      let content = "";
+
+      if (!originMessage?.content && currentThink) {
+        content = `<think>${currentThink}`;
+      } else if (
+        originMessage?.content?.includes("<think>") &&
+        !originMessage?.content.includes("</think>") &&
+        currentContent
+      ) {
+        content = `${originMessage?.content}</think>${currentContent}`;
+      } else {
+        content = `${
+          originMessage?.content || ""
+        }${currentThink}${currentContent}`;
+      }
+
+      return {
+        content: content,
+        role: "assistant",
+      };
+    },
+    resolveAbortController: (controller) => {
+      abortController.current = controller;
+    },
   });
   const rolesAsFunction = (bubbleData: BubbleProps, index: number) => {
-    const RenderIndex: BubbleProps["messageRender"] = (content) => (
-      <Flex>
-        #{index}: {content}
-      </Flex>
-    );
     switch (bubbleData.role) {
-      case "ai":
+      case "assistant":
         return {
           placement: "start" as const,
           avatar: { icon: <UserOutlined />, style: { background: "#fde3cf" } },
@@ -69,93 +146,48 @@ export default () => {
         return {};
     }
   };
-  const request = async () => {
-    // setStatus('pending');
-    // 添加用户消息到聊天记录
-    setItemChat((pre) => [...pre, { role: "user", content: value }]);
 
-    setValue("");
-    setLines([]);
-    setLoading(true);
-    message.info("Send message!");
-    agent.request(
-      {
-        messages: [{ role: "user", content: value }],
-        stream: true,
-      },
-      {
-        onSuccess: () => {
-          setLoading(false);
-          message.success("Send message successfully!");
-        },
-        onError: (error) => {
-          if (error.name === "AbortError") {
-            setLoading(false);
-            message.error("Send message AbortError!");
-          }
-          setLoading(false);
-          message.error("Send message Error!");
-        },
-        onUpdate: (msg) => {
-          setLines((pre) => [...pre, msg]);
-        },
-        onStream: (controller) => {
-          abortController.current = controller;
-        },
-      },
-      new TransformStream<string, any>({
-        transform(chunk, controller) {
-          const DEFAULT_KV_SEPARATOR = "data: ";
-          const DEFAULT_STREAM_SEPARATOR = "\n\n";
-          const parts = chunk.split(DEFAULT_STREAM_SEPARATOR);
-
-          parts.forEach((part) => {
-            const separatorIndex = part.indexOf(DEFAULT_KV_SEPARATOR);
-            const value = part.slice(
-              separatorIndex + DEFAULT_KV_SEPARATOR.length
-            );
-            try {
-              const modalMessage = JSON.parse(value || "{}");
-              const content = modalMessage?.choices?.[0]?.delta?.content || "";
-              controller.enqueue(content);
-            } catch (error) {
-              controller.enqueue("");
-            }
-          });
-        },
-      })
-    );
-    // await exampleRequest.create(
-    //   {
-    //     messages: [{ role: "user", content: value }],
-    //     stream: true,
-    //   },
-    //   {
-    //     onSuccess: () => {
-    //       setLoading(false);
-    //       message.success("Send message successfully!");
-    //       console.log("onSuccess", lines);
-    //     },
-    //     onError: (error) => {
-    //       setLoading(false);
-    //       message.success("Send message AbortError!");
-    //     },
-    //     onUpdate: (msg) => {
-    //       // setLines((pre) => [...pre, msg]);
-    //       console.log(msg);
-    //     },
-    //     onStream: (controller) => {
-    //       abortController.current = controller;
-    //     },
-    //   },
-    //   new TransformStream<string, string>({
-    //     transform(chunk, controller) {
-    //       controller.enqueue(chunk);
-    //     },
-    //   })
-    // );
-  };
   // Mock send message
+  React.useEffect(() => {
+    fetch(API_CONFIG.baseModelURL, {
+      method: "GET",
+      headers: {
+        Authorization: API_CONFIG.apiKey,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+        // 将API数据转换为Select组件需要的格式;
+        if (data && data.data && Array.isArray(data.data)) {
+          const options = data.data.map((item: any, index: number) => ({
+            value: item.root || item.id,
+            label: item.id || item.root,
+          }));
+          setModelOptions(options);
+          setFilteredOptions(options); // 初始化过滤选项
+        }
+      })
+      .catch((error) => console.error("Error:", error));
+
+    // fetch("http://localhost:3000/api/users", {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    //   body: JSON.stringify({
+    //     username: "JohnDoe",
+    //     password: "123456",
+    //     email: "john.doe@example.com",
+    //   }),
+    // })
+    //   .then((response) => response.json())
+    //   .then((data) => {
+    //     console.log(data);
+    //   })
+    //   .catch((error) => console.error("Error:", error));
+  }, []);
+
   React.useEffect(() => {
     // 跳过首次渲染
     if (isFirstRender.current) {
@@ -163,12 +195,12 @@ export default () => {
       return;
     }
 
-    if (!loading) {
-      // 将最新的lines数据格式化为{ role: "ai", content: ... }并添加到itemChat
-      const content = lines.join("");
-      console.log(content, "content");
-      setItemChat((pre) => [...pre, { role: "ai", content }]);
-    }
+    // if (!loading) {
+    //   // 将最新的lines数据格式化为{ role: "assistant", content: ... }并添加到itemChat
+    //   const content = lines.join("");
+    //   console.log(content, "content");
+    //   setItemChat((pre) => [...pre, { role: "assistant", content }]);
+    // }
   }, [loading]);
   return (
     <>
@@ -220,11 +252,11 @@ export default () => {
                 scrollBehavior: "smooth",
               }}
               roles={rolesAsFunction}
-              items={itemChat.map((item, i) => {
+              items={messages.map(({ id, message }) => {
                 return {
-                  key: i,
-                  role: item.role || "user",
-                  content: item.content || "",
+                  key: id,
+                  role: message.role || "user",
+                  content: message.content || "",
                 };
               })}
             />
@@ -242,6 +274,16 @@ export default () => {
                 },
               ]}
             />
+            <Select
+              showSearch
+              placeholder="Select a model"
+              value={selectedModel}
+              optionFilterProp="label"
+              onChange={onChange}
+              onSearch={onSearch}
+              options={filteredOptions}
+              style={{ width: 300 }}
+            />
             <Suggestion items={[{ label: "Write a report", value: "report" }]}>
               {({ onTrigger, onKeyDown }) => {
                 return (
@@ -257,11 +299,19 @@ export default () => {
                       setValue(nextVal);
                     }}
                     onKeyDown={onKeyDown}
-                    onSubmit={() => {
-                      request();
+                    onSubmit={(content) => {
+                      onRequest({
+                        stream: true,
+                        message: {
+                          role: "user",
+                          content: content,
+                        },
+                      });
+                      setValue("");
                     }}
                     onCancel={() => {
                       setLoading(false);
+                      abortController?.current?.abort?.();
                       message.error("Cancel sending!");
                     }}
                     placeholder='Type "/" to trigger suggestion'
