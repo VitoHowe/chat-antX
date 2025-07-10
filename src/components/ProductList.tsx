@@ -146,8 +146,9 @@ export default () => {
     }
   };
   const [agent] = useXAgent<YourMessageType>({
-    baseURL: API_CONFIG.baseURL,
+    baseURL: `${API_CONFIG.baseURL}?type=${selectedModelSource}`,
     model: selectedModel,
+
     // dangerouslyApiKey: API_CONFIG.apiKey,
     /** 🔥🔥 Its dangerously! */
   });
