@@ -100,11 +100,10 @@ export default () => {
     const fetchModels = async () => {
       try {
         const models = await ApiService.getModels(selectedModelSource);
-
-        if (models.length > 0) {
+        if (Array.isArray(models) && models.length > 0) {
           const options = models.map((item) => ({
-            value: item.root || item.id,
-            label: item.id || item.root,
+            value: item.id,
+            label: item.id,
           }));
 
           setModelOptions(options);
