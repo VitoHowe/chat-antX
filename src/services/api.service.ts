@@ -45,6 +45,7 @@ const request = async <T>(
     const defaultOptions: RequestInit = {
       headers: {
         "Content-Type": "application/json",
+        authorization: `Bearer ${localStorage.getItem("authToken")}`,
       },
       ...options,
     };

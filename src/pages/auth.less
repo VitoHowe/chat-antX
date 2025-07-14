@@ -1,0 +1,458 @@
+/**
+ * 认证页面样式 - 现代化设计
+ * 包含渐变背景、卡片设计、动画效果
+ */
+
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  
+  // 渐变背景
+  background: linear-gradient(135deg, 
+    #667eea 0%, 
+    #764ba2 25%, 
+    #6b73ff 50%, 
+    #9a9ce2 75%, 
+    #c3cfe2 100%
+  );
+
+  // 背景动画
+  animation: gradientShift 20s ease infinite;
+}
+
+// 背景渐变动画
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+// 背景装饰元素
+.auth-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.auth-bg-shape {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  animation: float 6s ease-in-out infinite;
+}
+
+.auth-bg-shape-1 {
+  width: 300px;
+  height: 300px;
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.auth-bg-shape-2 {
+  width: 200px;
+  height: 200px;
+  top: 60%;
+  right: 15%;
+  animation-delay: 2s;
+}
+
+.auth-bg-shape-3 {
+  width: 150px;
+  height: 150px;
+  bottom: 20%;
+  left: 20%;
+  animation-delay: 4s;
+}
+
+// 浮动动画
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(180deg); }
+}
+
+// 主要内容区域
+.auth-content {
+  z-index: 2;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+// 认证卡片
+.auth-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    0 10px 20px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 40px 30px;
+  position: relative;
+  overflow: hidden;
+  
+  // 入场动画
+  animation: cardSlideIn 0.8s ease-out;
+  
+  // 悬停效果
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 
+      0 30px 60px rgba(0, 0, 0, 0.15),
+      0 15px 30px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+  
+  // 卡片内部光效
+  &::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    border-radius: 20px;
+    z-index: -1;
+  }
+}
+
+// 卡片入场动画
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+// 头部样式
+.auth-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.auth-title {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+  font-size: 32px;
+  margin-bottom: 8px !important;
+  
+  // 文字发光效果
+  text-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+}
+
+.auth-subtitle {
+  color: #666;
+  font-size: 16px;
+  opacity: 0.8;
+}
+
+// 表单容器
+.auth-form-container {
+  margin-bottom: 20px;
+}
+
+// 标签页样式 - 优化版本
+.auth-tabs {
+  .ant-tabs-nav {
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: center;
+    
+    &::before {
+      border: none;
+    }
+    
+    .ant-tabs-nav-wrap {
+      .ant-tabs-nav-list {
+        background: rgba(240, 242, 255, 0.6);
+        padding: 4px;
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(102, 126, 234, 0.1);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        display: flex;
+        gap: 4px;
+        width: 200px; // 固定宽度
+        justify-content: space-between;
+      }
+    }
+  }
+  
+  .ant-tabs-tab {
+    font-size: 15px;
+    font-weight: 600;
+    padding: 10px 20px !important;
+    border-radius: 12px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    margin: 0 !important;
+    background: transparent;
+    border: none !important;
+    flex: 1; // 平分宽度
+    text-align: center;
+    min-width: 0;
+    justify-content: center;
+    .ant-tabs-tab-btn {
+      color: #666;
+      transition: all 0.3s ease;
+      font-weight: 600;
+    }
+    
+    &:hover {
+      background: rgba(102, 126, 234, 0.08);
+      
+      .ant-tabs-tab-btn {
+        color: #667eea;
+        transform: translateY(-1px);
+      }
+    }
+    
+    &.ant-tabs-tab-active {
+      background: linear-gradient(135deg, #667eea, #764ba2) !important;
+      color: white;
+      border-radius: 12px !important;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      transform: translateY(-1px);
+      
+      .ant-tabs-tab-btn {
+        color: white !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+      
+      // 活跃状态的光效
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        border-radius: 12px;
+        animation: shimmer 2s ease-in-out infinite;
+      }
+    }
+  }
+  
+  .ant-tabs-ink-bar {
+    display: none;
+  }
+  
+  .ant-tabs-content-holder {
+    .ant-tabs-content {
+      .ant-tabs-tabpane {
+        // 切换动画
+        opacity: 0;
+        animation: tabFadeIn 0.5s ease forwards;
+      }
+    }
+  }
+}
+
+// 活跃标签的光效动画
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+  100% { transform: translateX(100%); }
+}
+
+// 标签页内容动画
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// 输入框样式
+.auth-input {
+  height: 50px;
+  border-radius: 12px;
+  border: 2px solid #e8e8e8;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  font-size: 16px;
+  
+  &:hover {
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.9);
+  }
+  
+  &:focus,
+  &.ant-input-focused {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    background: rgba(255, 255, 255, 0.95);
+  }
+  
+  .ant-input {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    
+    &::placeholder {
+      color: #999;
+    }
+  }
+}
+
+// 输入框图标
+.auth-input-icon {
+  color: #667eea;
+  font-size: 16px;
+}
+
+// 提交按钮
+.auth-submit-btn {
+  height: 50px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 10px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: linear-gradient(135deg, #5a67d8, #6b46c1);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  &.ant-btn-loading {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+  }
+}
+
+// 底部样式
+.auth-footer {
+  margin-top: 20px;
+  
+  .ant-divider {
+    border-color: rgba(102, 126, 234, 0.2);
+    
+    .ant-divider-inner-text {
+      background: transparent;
+    }
+  }
+}
+
+.auth-footer-text {
+  color: #888;
+  font-size: 14px;
+}
+
+// 表单项间距
+.ant-form-item {
+  margin-bottom: 20px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// 错误提示样式
+.ant-form-item-explain-error {
+  color: #ff4d4f;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .auth-container {
+    padding: 20px;
+  }
+  
+  .auth-card {
+    padding: 30px 20px;
+    margin: 20px 0;
+    border-radius: 16px;
+  }
+  
+  .auth-title {
+    font-size: 28px;
+  }
+  
+  .auth-bg-shape-1,
+  .auth-bg-shape-2,
+  .auth-bg-shape-3 {
+    display: none; // 在小屏幕上隐藏装饰元素
+  }
+  
+  // 移动端标签页优化
+  .auth-tabs {
+    .ant-tabs-nav {
+      .ant-tabs-nav-wrap {
+        .ant-tabs-nav-list {
+          width: 180px; // 移动端稍微窄一点
+        }
+      }
+    }
+    
+    .ant-tabs-tab {
+      font-size: 14px;
+      padding: 8px 16px !important;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-content {
+    max-width: 100%;
+    padding: 10px;
+  }
+  
+  .auth-card {
+    padding: 25px 15px;
+  }
+  
+  .auth-input {
+    height: 45px;
+  }
+  
+  .auth-submit-btn {
+    height: 45px;
+  }
+  
+  // 小屏幕标签页进一步优化
+  .auth-tabs {
+    .ant-tabs-nav {
+      .ant-tabs-nav-wrap {
+        .ant-tabs-nav-list {
+          width: 160px;
+        }
+      }
+    }
+    
+    .ant-tabs-tab {
+      font-size: 13px;
+      padding: 7px 12px !important;
+    }
+  }
+} 

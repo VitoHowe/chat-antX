@@ -5,6 +5,7 @@
 ## 🚀 项目特性
 
 - **现代化 UI**：基于 Ant Design X 最新组件
+- **用户认证**：完整的登录/注册系统，现代化 UI 设计
 - **响应式设计**：支持 LTR/RTL 布局切换
 - **组件化架构**：使用 React + TypeScript
 - **按需引入**：优化打包体积，只加载使用的组件
@@ -51,13 +52,88 @@ chat-antX/
 ├── src/
 │   ├── components/          # 组件目录
 │   │   └── ProductList.tsx  # 主要聊天界面组件
-│   └── pages/              # 页面目录
+│   ├── pages/              # 页面目录
+│   │   ├── auth.tsx        # 登录/注册页面
+│   │   ├── auth.less       # 认证页面样式
+│   │   └── ...
+│   └── services/           # 服务目录
+│       ├── api.service.ts  # API服务封装
+│       └── auth.service.ts # 认证服务
 ├── .umirc.ts               # Umi 配置文件
 ├── package.json            # 项目依赖配置
 └── README.md              # 项目说明文档
 ```
 
-## 🔧 核心组件功能
+## 🔧 核心功能
+
+### 用户认证系统
+
+#### 登录/注册页面 (`/auth`)
+
+**功能特性：**
+
+- **现代化 UI 设计**：采用渐变背景、卡片式设计、流畅动画
+- **双模式切换**：登录和注册模式无缝切换
+- **表单验证**：完整的前端表单验证机制
+- **响应式布局**：适配移动设备和桌面端
+- **用户体验优化**：加载状态、错误提示、成功反馈
+
+**登录功能：**
+
+- 用户名输入（最少 3 个字符）
+- 密码输入（最少 6 个字符）
+- API 接口：`POST /login`
+
+**注册功能：**
+
+- 用户名输入（字母、数字、下划线）
+- 邮箱验证（标准邮箱格式）
+- 密码输入（最少 6 个字符）
+- 密码确认（一致性验证）
+- API 接口：`POST /register`
+
+**技术实现：**
+
+- **表单管理**：使用 Ant Design Form 组件
+- **状态管理**：React Hooks (useState)
+- **路由跳转**：Umi history 对象
+- **本地存储**：JWT token 自动保存
+- **API 集成**：统一的错误处理和响应管理
+
+#### 认证服务 (`AuthService`)
+
+**功能说明：**
+
+- **login()**：用户登录，自动保存 token
+- **register()**：用户注册，成功后引导登录
+- **logout()**：清除本地 token，退出登录
+- **getToken()**：获取存储的认证 token
+- **isAuthenticated()**：检查用户登录状态
+
+**数据类型：**
+
+```typescript
+// 登录请求参数
+interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+// 注册请求参数
+interface RegisterRequest {
+  username: string;
+  password: string;
+  email: string;
+}
+
+// 用户信息
+interface UserInfo {
+  id: string;
+  username: string;
+  email: string;
+  token?: string;
+}
+```
 
 ### ProductList 组件
 
@@ -88,6 +164,7 @@ export default defineConfig({
     { path: "/", component: "index" },
     { path: "/docs", component: "docs" },
     { path: "/products", component: "products" },
+    { path: "/auth", component: "auth" }, // 新增认证页面
   ],
 
   // 包管理器
@@ -110,6 +187,25 @@ export default defineConfig({
 - **减少打包体积**：只打包实际使用的组件
 - **提升加载速度**：减少不必要的资源加载
 - **自动化处理**：无需手动引入样式文件
+
+## 🎨 UI 设计特点
+
+### 现代化认证页面
+
+**视觉特色：**
+
+- **渐变背景**：多色彩渐变，营造科技感
+- **玻璃态效果**：毛玻璃背景模糊，层次分明
+- **浮动动画**：背景装饰元素的漂浮动画
+- **卡片设计**：圆角阴影，悬停效果
+- **流畅过渡**：所有交互都有平滑动画
+
+**用户体验：**
+
+- **响应式设计**：完美适配各种屏幕尺寸
+- **表单友好**：清晰的输入提示和错误反馈
+- **加载状态**：按钮加载动画，操作状态清晰
+- **视觉层次**：合理的间距和字体层级
 
 ## 🎨 样式与主题
 
@@ -145,6 +241,26 @@ pnpm add -D @types/react @types/react-dom
 检查 `.umirc.ts` 中是否正确配置了 antd 插件。
 
 ## 📝 开发日志
+
+### v2.0.0 (2025-01-XX)
+
+- ✅ **新增用户认证系统**
+  - 现代化登录/注册页面设计
+  - 完整的表单验证机制
+  - JWT token 自动管理
+  - 响应式 UI 适配
+- ✅ **API 服务优化**
+  - 统一的认证服务封装
+  - 错误处理和用户反馈
+  - TypeScript 类型安全
+- ✅ **UI/UX 提升**
+  - 渐变背景和玻璃态效果
+  - 流畅的动画过渡
+  - 现代化的视觉设计
+- ✅ **项目结构优化**
+  - 新增 services 目录
+  - 完善的代码注释
+  - 更新项目文档
 
 ### v1.0.0 (2025-06-30)
 
