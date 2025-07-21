@@ -15,6 +15,7 @@ import {
   Divider,
   message,
 } from "antd";
+import type { TabsProps } from "antd";
 import {
   UserOutlined,
   LockOutlined,
@@ -31,7 +32,6 @@ import {
 import "./auth.less";
 
 const { Title, Text } = Typography;
-const { TabPane } = Tabs;
 
 /**
  * 认证页面主组件
@@ -235,6 +235,20 @@ const AuthPage: React.FC = () => {
     </Form>
   );
 
+  // 定义Tabs的items配置
+  const tabItems: TabsProps['items'] = [
+    {
+      key: 'login',
+      label: '登录',
+      children: <LoginForm />,
+    },
+    {
+      key: 'register',
+      label: '注册',
+      children: <RegisterForm />,
+    },
+  ];
+
   return (
     <div className="auth-container">
       {/* 背景装饰 */}
@@ -265,14 +279,8 @@ const AuthPage: React.FC = () => {
               centered
               className="auth-tabs"
               size="large"
-            >
-              <TabPane tab="登录" key="login">
-                <LoginForm />
-              </TabPane>
-              <TabPane tab="注册" key="register">
-                <RegisterForm />
-              </TabPane>
-            </Tabs>
+              items={tabItems}
+            />
           </div>
 
           {/* 底部提示 */}

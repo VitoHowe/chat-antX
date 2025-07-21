@@ -5,14 +5,9 @@
 
 import { message } from "antd";
 import { API_CONFIG } from "../config/api";
-
-// 通用响应类型
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  code?: number;
-}
+import { store } from "../store";
+import { loginStart, loginSuccess, loginFailure, logout as logoutAction } from "../store/slices/authSlice";
+import httpService, { type ApiResponse } from "./http.service";
 
 // 用户登录请求参数
 export interface LoginRequest {
@@ -27,47 +22,20 @@ export interface RegisterRequest {
   email: string;
 }
 
-// 用户信息类型
-export interface UserInfo {
+// 用户基础信息类型
+export interface User {
   id: string;
   username: string;
   email: string;
-  token?: string;
+  createdAt?: string;
 }
 
-/**
- * 通用请求方法
- */
-const request = async <T>(
-  url: string,
-  options?: RequestInit
-): Promise<ApiResponse<T>> => {
-  try {
-    const defaultOptions: RequestInit = {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      ...options,
-    };
-
-    const response = await fetch(url, defaultOptions);
-
-    // 处理非200响应
-    if (!response.ok) {
-      throw new Error(`请求失败: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("认证API请求错误:", error);
-    message.error("请求失败，请检查网络连接");
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : "未知错误",
-    };
-  }
-};
+// 登录响应数据类型
+export interface UserInfo {
+  token: string;
+  user: User;
+  expiresIn?: string;
+}
 
 /**
  * 认证服务
@@ -79,20 +47,38 @@ export const AuthService = {
    * @returns 用户信息和令牌
    */
   login: async (loginData: LoginRequest): Promise<ApiResponse<UserInfo>> => {
-    const response = await request<UserInfo>(API_CONFIG.UserLoginURL, {
-      method: "POST",
-      body: JSON.stringify(loginData),
-    });
+    // 开始登录，更新Redux状态
+    store.dispatch(loginStart());
+    
+    try {
+      const response = await httpService.post<UserInfo>(
+        API_CONFIG.UserLoginURL,
+        loginData,
+        { requireAuth: false } // 登录请求不需要 token
+      );
 
-    if (response.success && response.data?.token) {
-      // 保存token到本地存储
-      localStorage.setItem("authToken", response.data.token);
-      message.success("登录成功！");
-    } else {
-      message.error(response.message || "登录失败");
+      if (response.success && response.data?.token) {
+        // 保存token到本地存储（兼容现有逻辑）
+        localStorage.setItem("authToken", response.data.token);
+        // 更新Redux状态 - 登录成功
+        store.dispatch(loginSuccess(response.data));
+        
+        message.success("登录成功！");
+      } else {
+        // 更新Redux状态 - 登录失败
+        store.dispatch(loginFailure(response.message || "登录失败"));
+        // httpService 已经处理了错误消息显示，这里不需要重复显示
+      }
+
+      return response;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "登录过程中发生未知错误";
+      
+      // 更新Redux状态 - 登录失败
+      store.dispatch(loginFailure(errorMessage));
+      
+      throw error;
     }
-
-    return response;
   },
 
   /**
@@ -103,16 +89,16 @@ export const AuthService = {
   register: async (
     registerData: RegisterRequest
   ): Promise<ApiResponse<UserInfo>> => {
-    const response = await request<UserInfo>(API_CONFIG.UserRegisterURL, {
-      method: "POST",
-      body: JSON.stringify(registerData),
-    });
+    const response = await httpService.post<UserInfo>(
+      API_CONFIG.UserRegisterURL,
+      registerData,
+      { requireAuth: false } // 注册请求不需要 token
+    );
 
     if (response.success) {
       message.success("注册成功！请登录");
-    } else {
-      message.error(response.message || "注册失败");
     }
+    // httpService 已经处理了错误消息显示
 
     return response;
   },
@@ -121,7 +107,12 @@ export const AuthService = {
    * 退出登录
    */
   logout: () => {
+    // 清除本地存储
     localStorage.removeItem("authToken");
+    
+    // 更新Redux状态
+    store.dispatch(logoutAction());
+    
     message.success("已退出登录");
   },
 

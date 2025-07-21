@@ -148,7 +148,7 @@ export default () => {
     baseURL: `${API_CONFIG.baseURL}?type=${selectedModelSource}`,
     model: selectedModel,
 
-    // dangerouslyApiKey: API_CONFIG.apiKey,
+    dangerouslyApiKey: `Bearer ${localStorage.getItem("authToken")}`,
     /** 🔥🔥 Its dangerously! */
   });
   const { onRequest, messages } = useXChat({
@@ -236,7 +236,7 @@ export default () => {
       <XProvider>
         <Flex
           style={{
-            height: "100vh",
+            height: "100%",
             backgroundColor: "#f5f5f5",
             padding: "16px",
           }}
