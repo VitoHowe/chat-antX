@@ -3,7 +3,7 @@
  * 显示应用标题、用户状态和相关操作
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { 
   Layout, 
   Typography, 
@@ -21,10 +21,11 @@ import {
   SettingOutlined,
   RobotOutlined 
 } from '@ant-design/icons';
-import { useAppSelector } from '../store';
-import { selectAuth } from '../store/slices/authSlice';
-import { AuthService } from '../services/auth.service';
+import { useAppSelector } from '@/store';
+import { selectAuth } from '@/store/slices/authSlice';
+import { AuthService } from '@/services/auth.service';
 import { history } from 'umi';
+import '@/styles/components/Header.css';
 
 const { Header: AntHeader } = Layout;
 const { Text, Title } = Typography;
@@ -34,7 +35,6 @@ const Header: React.FC = () => {
 
   const handleLogout = () => {
     AuthService.logout();
-    // 可选：跳转到登录页
     history.push('/auth');
   };
 
@@ -42,12 +42,12 @@ const Header: React.FC = () => {
     history.push('/auth');
   };
 
-  // 用户下拉菜单项
-  const userMenuItems: MenuProps['items'] = [
+  // 使用 useMemo 优化用户菜单项的计算
+  const userMenuItems: MenuProps['items'] = useMemo(() => [
     {
       key: 'user-info',
       label: (
-        <div style={{ padding: '8px 0' }}>
+        <div className="user-info-menu-item">
           <div>
             <Text strong>{auth.user?.username}</Text>
             <br />
@@ -55,9 +55,9 @@ const Header: React.FC = () => {
               {auth.user?.email}
             </Text>
           </div>
-          <Divider style={{ margin: '8px 0' }} />
+          <Divider className="user-info-divider" />
           <div>
-            <Text type="secondary" style={{ fontSize: '11px' }}>
+            <Text type="secondary" className="user-id-text">
               用户ID: {auth.user?.id}
             </Text>
           </div>
@@ -71,7 +71,7 @@ const Header: React.FC = () => {
     {
       key: 'settings',
       label: '设置',
-      icon: <SettingOutlined />,
+      icon: <SettingOutlined className="menu-item-icon" />,
       onClick: () => {
         // TODO: 实现设置页面跳转
         console.log('跳转到设置页面');
@@ -80,74 +80,33 @@ const Header: React.FC = () => {
     {
       key: 'logout',
       label: '退出登录',
-      icon: <LogoutOutlined />,
+      icon: <LogoutOutlined className="menu-item-icon" />,
       onClick: handleLogout,
-      danger: true,
+      className: 'danger-menu-item',
     },
-  ];
+  ], [auth.user, handleLogout]);
 
   return (
-    <AntHeader
-      style={{
-        background: '#fff',
-        padding: '0 24px',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-        borderBottom: '1px solid #f0f0f0',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        height: '64px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-      }}
-    >
+    <AntHeader className="header-container">
       {/* 左侧：应用 Logo 和标题 */}
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <RobotOutlined 
-          style={{ 
-            fontSize: '24px', 
-            color: '#1890ff', 
-            marginRight: '12px' 
-          }} 
-        />
-        <Title 
-          level={4} 
-          style={{ 
-            margin: 0, 
-            color: '#1890ff',
-            fontWeight: 600 
-          }}
-        >
+      <div className="header-logo-area">
+        <RobotOutlined className="header-logo-icon" />
+        <Title level={4} className="header-title">
           Chat AntX
         </Title>
       </div>
 
       {/* 右侧：用户状态区域 */}
-      <div style={{ display: 'flex', alignItems: 'center' }}>
+      <div className="header-user-area">
         {auth.isAuthenticated ? (
           <Space size="middle">
             {/* 状态指示器 */}
             <Space size="small">
-              <Tag 
-                color="green" 
-                style={{ 
-                  margin: 0,
-                  borderRadius: '12px',
-                  fontSize: '11px' 
-                }}
-              >
+              <Tag className="status-tag online">
                 在线
               </Tag>
               {auth.loading && (
-                <Tag 
-                  color="blue" 
-                  style={{ 
-                    margin: 0,
-                    borderRadius: '12px',
-                    fontSize: '11px' 
-                  }}
-                >
+                <Tag className="status-tag syncing">
                   同步中
                 </Tag>
               )}
@@ -160,39 +119,13 @@ const Header: React.FC = () => {
               trigger={['click']}
               arrow={{ pointAtCenter: true }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  padding: '4px 8px',
-                  borderRadius: '8px',
-                  transition: 'background-color 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f5f5f5';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
+              <div className="user-dropdown-trigger">
                 <Avatar 
                   size="small" 
                   icon={<UserOutlined />}
-                  style={{ 
-                    backgroundColor: '#1890ff',
-                    marginRight: '8px' 
-                  }}
+                  className="user-avatar"
                 />
-                <Text 
-                  style={{ 
-                    maxWidth: '120px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    fontSize: '14px'
-                  }}
-                >
+                <Text className="user-name">
                   {auth.user?.username}
                 </Text>
               </div>
@@ -204,10 +137,7 @@ const Header: React.FC = () => {
               type="primary" 
               icon={<UserOutlined />} 
               onClick={handleLogin}
-              style={{
-                borderRadius: '6px',
-                fontWeight: 500,
-              }}
+              className="login-btn"
             >
               登录
             </Button>

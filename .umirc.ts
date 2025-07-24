@@ -24,4 +24,7 @@ export default defineConfig({
     // 启用antd的主题配置
     configProvider: {},
   },
+  alias: {
+    "@": require("path").resolve(__dirname, "src"),
+  },
 });

@@ -10,165 +10,86 @@ import {
 } from "@ant-design/x";
 import {
   Flex,
-  Divider,
-  Radio,
-  Card,
-  Typography,
-  message,
   Select,
   Space,
+  Button,
+  Modal,
+  Input,
+  Popconfirm,
 } from "antd";
-
-import type { ConfigProviderProps, GetProp, GetRef } from "antd";
+import type { GetRef } from "antd";
 import {
-  AlipayCircleOutlined,
   BulbOutlined,
-  GithubOutlined,
   SmileOutlined,
   UserOutlined,
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
 import type { BubbleProps } from "@ant-design/x";
 import { useXAgent, useXChat } from "@ant-design/x";
-import { API_CONFIG } from "../config/api";
-import { ApiService, ModelSource, Model } from "../services/api.service";
+import { API_CONFIG } from "@/config/api";
+import { useConversations } from "@/hooks/useConversations";
+import { useModelSelection } from "@/hooks/useModelSelection";
+import type { Message, ConversationItem } from "@/types";
+// 样式导入
+import '@/styles/components/ProductList.css';
 
-interface YourMessageType {
-  role: string;
-  content: string;
-}
 export default () => {
   const [value, setValue] = React.useState("");
-  const [loading, setLoading] = React.useState<boolean>(false);
   const listRef = React.useRef<GetRef<typeof Bubble.List>>(null);
-  const [lines, setLines] = React.useState<Record<string, string>[]>([]);
-  const [itemChat, setItemChat] = React.useState<Record<string, string>[]>([]);
-  const [modelOptions, setModelOptions] = React.useState<
-    { value: string; label: string }[]
-  >([]);
-  const [filteredOptions, setFilteredOptions] = React.useState<
-    { value: string; label: string }[]
-  >([]);
-  const [selectedModel, setSelectedModel] =
-    React.useState<string>("gpt-4.1-mini");
-  const [selectedModelSource, setSelectedModelSource] =
-    React.useState<string>("");
-  const [SourceOptions, setSourceOptions] = React.useState<
-    { value: string; label: string }[]
-  >([]);
   const abortController = useRef<AbortController | null>(null);
 
-  // 获取模型源列表
-  React.useEffect(() => {
-    // 获取模型源列表
-    const fetchModelSources = async () => {
-      try {
-        const sources = await ApiService.getModelSources();
+  // 使用自定义hooks
+  const {
+    conversations,
+    activeConversationKey,
+    editingConversation,
+    isEditModalVisible,
+    createConversation,
+    startEditConversation,
+    saveEditConversation,
+    cancelEditConversation,
+    deleteConversation,
+    changeConversation,
+    updateEditingLabel,
+  } = useConversations();
 
-        if (sources.length > 0) {
-          // 转换为Select组件需要的格式
-          const options = sources.map((item) => ({
-            value: String(item.type),
-            label: item.name,
-          }));
+  const {
+    filteredOptions,
+    selectedModel,
+    sourceOptions,
+    selectedModelSource,
+    changeModel,
+    changeModelSource,
+    searchModels,
+  } = useModelSelection();
 
-          setSourceOptions(options);
-
-          // 默认选择第一个
-          if (options.length > 0) {
-            setSelectedModelSource(options[0].value);
-          }
-        }
-      } catch (error) {
-        console.error("获取模型源列表失败:", error);
-        message.error("获取模型源列表失败");
-      }
-    };
-
-    fetchModelSources();
-  }, []);
-
-  // 获取模型列表
-  React.useEffect(() => {
-    // 确保selectedModelSource有值时才请求
-    if (!selectedModelSource) return;
-
-    // 重置模型选择
-    setSelectedModel("");
-    setFilteredOptions([]);
-
-    // 获取模型列表
-    const fetchModels = async () => {
-      try {
-        const models = await ApiService.getModels(selectedModelSource);
-        if (Array.isArray(models) && models.length > 0) {
-          const options = models.map((item) => ({
-            value: item.id,
-            label: item.id,
-          }));
-
-          setModelOptions(options);
-          setFilteredOptions(options);
-
-          // 默认选择第一个
-          if (options.length > 0) {
-            setSelectedModel(options[0].value);
-          }
-        }
-      } catch (error) {
-        console.error("获取模型列表失败:", error);
-        message.error("获取模型列表失败");
-      }
-    };
-
-    fetchModels();
-  }, [selectedModelSource]);
-
-  const onChange = (value: string) => {
-    setSelectedModel(value);
-  };
-
-  const onChangeSource = (value: string) => {
-    setSelectedModelSource(value);
-  };
-
-  const onSearch = (value: string) => {
-    // console.log("search:", value);
-    if (!value) {
-      setFilteredOptions(modelOptions);
-    } else {
-      const filtered = modelOptions.filter(
-        (option) =>
-          option.label.toLowerCase().includes(value.toLowerCase()) ||
-          option.value.toLowerCase().includes(value.toLowerCase())
-      );
-      setFilteredOptions(filtered);
-    }
-  };
-  const [agent] = useXAgent<YourMessageType>({
+  const [agent] = useXAgent<Message>({
     baseURL: `${API_CONFIG.baseURL}?type=${selectedModelSource}`,
     model: selectedModel,
-
     dangerouslyApiKey: `Bearer ${localStorage.getItem("authToken")}`,
-    /** 🔥🔥 Its dangerously! */
   });
+
   const { onRequest, messages } = useXChat({
     agent,
     requestFallback: (_, { error }) => {
       if (error.name === "AbortError") {
         return {
           content: "Request is aborted",
-          role: "assistant",
+          role: "assistant" as const,
         };
       }
       return {
         content: "Request failed, please try again!",
-        role: "assistant",
+        role: "assistant" as const,
       };
     },
     requestPlaceholder: () => {
       return {
         content: "Please wait...",
-        role: "assistant",
+        role: "assistant" as const,
       };
     },
     transformMessage: (info) => {
@@ -203,13 +124,14 @@ export default () => {
 
       return {
         content: content,
-        role: "assistant",
+        role: "assistant" as const,
       };
     },
     resolveAbortController: (controller) => {
       abortController.current = controller;
     },
   });
+
   const rolesAsFunction = (bubbleData: BubbleProps, index: number) => {
     switch (bubbleData.role) {
       case "assistant":
@@ -234,52 +156,76 @@ export default () => {
   return (
     <>
       <XProvider>
-        <Flex
-          style={{
-            height: "100%",
-            backgroundColor: "#f5f5f5",
-            padding: "16px",
-          }}
-          gap={12}
-        >
-          <Conversations
-            style={{
-              width: 200,
-              backgroundColor: "#fff",
-              borderRadius: "8px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-              marginRight: 0,
-            }}
-            defaultActiveKey="1"
-            items={[
-              {
-                key: "1",
-                label: "Conversation - 1",
-                icon: <GithubOutlined />,
-              },
-            ]}
-          />
-          <Divider type="vertical" style={{ height: "100%" }} />
-          <Flex
-            vertical
-            style={{
-              flex: 1,
-              overflow: "hidden",
-              backgroundColor: "#fff",
-              borderRadius: "8px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-              padding: "16px",
-            }}
-            gap={8}
-          >
+        <Flex className="product-list-container">
+          <Flex vertical className="conversation-sidebar">
+            {/* 新建对话按钮区域 */}
+            <div className="conversation-header">
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={createConversation}
+                className="create-conversation-btn"
+              >
+                新建对话
+              </Button>
+            </div>
+
+            {/* 对话列表 */}
+            <div className="conversation-list-container">
+              <Conversations
+                className="conversation-list"
+                styles={{
+                  item: {}
+                }}
+                classNames={{
+                  item: "conversation-item"
+                }}
+                activeKey={activeConversationKey}
+                onActiveChange={changeConversation}
+                items={conversations}
+                menu={(conversation) => ({
+                  items: [
+                    {
+                      key: "edit",
+                      label: "重命名",
+                      icon: <EditOutlined />,
+                      onClick: () => {
+                        const conversationItem: ConversationItem = {
+                          key: conversation.key,
+                          label: typeof conversation.label === 'string' ? conversation.label : '新对话',
+                          icon: conversation.icon || <MessageOutlined />,
+                          timestamp: (conversation as any).timestamp || Date.now(),
+                        };
+                        startEditConversation(conversationItem);
+                      },
+                    },
+                    {
+                      key: "delete",
+                      label: (
+                        <Popconfirm
+                          title="确认删除"
+                          description="确定要删除这个对话吗？删除后无法恢复。"
+                          onConfirm={() => deleteConversation(conversation.key)}
+                          okText="确认"
+                          cancelText="取消"
+                          placement="topRight"
+                        >
+                          <span className="delete-conversation-text">删除对话</span>
+                        </Popconfirm>
+                      ),
+                      icon: <DeleteOutlined />,
+                      danger: true,
+                    },
+                  ],
+                })}
+              />
+            </div>
+          </Flex>
+
+          <Flex vertical className="chat-main-area">
             <Bubble.List
               ref={listRef}
-              style={{
-                flex: 1,
-                overflow: "auto",
-                paddingInline: 16,
-                scrollBehavior: "smooth",
-              }}
+              className="message-list"
               roles={rolesAsFunction}
               items={messages.map(({ id, message }) => {
                 return {
@@ -289,6 +235,7 @@ export default () => {
                 };
               })}
             />
+            
             <Prompts
               items={[
                 {
@@ -303,24 +250,27 @@ export default () => {
                 },
               ]}
             />
-            <Space wrap>
+            
+            <Space wrap className="model-selector-area">
               <Select
                 placeholder="Select a modelSource"
                 value={selectedModelSource}
                 optionFilterProp="label"
-                onChange={onChangeSource}
-                options={SourceOptions}
+                onChange={changeModelSource}
+                options={sourceOptions}
                 style={{ width: 200 }}
+                className="model-select"
               />
               <Select
                 showSearch
                 placeholder="Select a model"
                 value={selectedModel}
                 optionFilterProp="label"
-                onChange={onChange}
-                onSearch={onSearch}
+                onChange={changeModel}
+                onSearch={searchModels}
                 options={filteredOptions}
                 style={{ width: 300 }}
+                className="model-select"
               />
             </Space>
 
@@ -350,9 +300,7 @@ export default () => {
                       setValue("");
                     }}
                     onCancel={() => {
-                      setLoading(false);
                       abortController?.current?.abort?.();
-                      message.error("Cancel sending!");
                     }}
                     placeholder='Type "/" to trigger suggestion'
                   />
@@ -361,6 +309,39 @@ export default () => {
             </Suggestion>
           </Flex>
         </Flex>
+
+        {/* 编辑对话标题的模态框 */}
+        <Modal
+          title={
+            <span className="text-gradient">
+              重命名对话
+            </span>
+          }
+          open={isEditModalVisible}
+          onOk={saveEditConversation}
+          onCancel={cancelEditConversation}
+          okText="保存"
+          cancelText="取消"
+          width={450}
+          className="edit-conversation-modal"
+          okButtonProps={{
+            className: "modal-ok-btn"
+          }}
+          cancelButtonProps={{
+            className: "modal-cancel-btn"
+          }}
+        >
+          <Input
+            value={editingConversation?.label || ""}
+            onChange={(e) => updateEditingLabel(e.target.value)}
+            placeholder="请输入对话标题"
+            maxLength={50}
+            showCount
+            onPressEnter={saveEditConversation}
+            className="edit-conversation-input"
+          />
+        </Modal>
+
         <ThoughtChain />
       </XProvider>
     </>

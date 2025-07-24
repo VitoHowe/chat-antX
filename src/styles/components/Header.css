@@ -1,0 +1,189 @@
+/**
+ * Header 组件样式
+ * 使用 .app-custom-styles 包装类提升优先级，避免使用 !important
+ */
+
+/* 主容器 */
+.app-custom-styles .header-container {
+  background: var(--color-primary-gradient);
+  backdrop-filter: var(--backdrop-blur-md);
+  border-bottom: 1px solid var(--glass-border-light);
+  padding: 0 var(--spacing-xxl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-index-sticky);
+  transition: var(--transition-normal);
+}
+
+/* 左侧Logo区域 */
+.app-custom-styles .header-logo-area {
+  display: flex;
+  align-items: center;
+}
+
+.app-custom-styles .header-logo-icon {
+  font-size: var(--spacing-xxl);
+  color: rgba(255, 255, 255, 0.9);
+  margin-right: var(--spacing-md);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.app-custom-styles .header-title {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 700;
+  font-size: 18px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 右侧用户区域 */
+.app-custom-styles .header-user-area {
+  display: flex;
+  align-items: center;
+}
+
+/* 状态标签 */
+.app-custom-styles .status-tag {
+  margin: 0;
+  border-radius: var(--radius-lg);
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: var(--backdrop-blur-sm);
+}
+
+.app-custom-styles .status-tag.online {
+  background: rgba(82, 196, 26, 0.2);
+  border-color: rgba(82, 196, 26, 0.3);
+  color: #a7f3d0;
+}
+
+.app-custom-styles .status-tag.syncing {
+  background: rgba(24, 144, 255, 0.2);
+  border-color: rgba(24, 144, 255, 0.3);
+  color: #93c5fd;
+}
+
+/* 用户下拉区域 */
+.app-custom-styles .user-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 6px var(--spacing-md);
+  border-radius: var(--radius-md);
+  transition: var(--transition-normal);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: var(--backdrop-blur-sm);
+}
+
+.app-custom-styles .user-dropdown-trigger:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.app-custom-styles .user-avatar {
+  background: var(--color-primary-gradient);
+  margin-right: var(--spacing-sm);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.app-custom-styles .user-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+/* 登录按钮 */
+.app-custom-styles .login-btn {
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  background: var(--color-primary-gradient);
+  border: none;
+  box-shadow: var(--shadow-primary);
+  transition: var(--transition-normal);
+  color: white;
+  height: 36px;
+}
+
+.app-custom-styles .login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-primary-hover);
+}
+
+/* 用户信息下拉菜单 */
+.app-custom-styles .user-info-menu-item {
+  padding: var(--spacing-sm) 0;
+}
+
+.app-custom-styles .user-info-divider {
+  margin: var(--spacing-sm) 0;
+}
+
+.app-custom-styles .user-id-text {
+  font-size: 11px;
+  color: var(--color-gray-500);
+}
+
+/* 菜单项图标 */
+.app-custom-styles .menu-item-icon {
+  margin-right: var(--spacing-sm);
+}
+
+/* 危险操作样式 */
+.app-custom-styles .danger-menu-item {
+  color: var(--color-error);
+}
+
+.app-custom-styles .danger-menu-item:hover {
+  background-color: rgba(255, 77, 79, 0.1);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .app-custom-styles .header-container {
+    padding: 0 var(--spacing-lg);
+  }
+  
+  .app-custom-styles .header-logo-icon {
+    font-size: var(--spacing-xl);
+    margin-right: var(--spacing-sm);
+  }
+  
+  .app-custom-styles .user-name {
+    max-width: 80px;
+  }
+  
+  .app-custom-styles .status-tag {
+    font-size: 10px;
+  }
+  
+  .app-custom-styles .user-dropdown-trigger {
+    padding: 4px var(--spacing-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .app-custom-styles .header-container {
+    padding: 0 var(--spacing-md);
+  }
+  
+  .app-custom-styles .user-name {
+    display: none;
+  }
+  
+  .app-custom-styles .header-title {
+    font-size: 16px;
+  }
+} 

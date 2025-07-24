@@ -11,9 +11,11 @@ import { Link, Outlet } from "umi";
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { Spin } from 'antd';
-import { store, persistor } from '../store';
+import { store, persistor } from '@/store';
 import styles from "./index.less";
-
+// 导入全局样式
+import '@/styles/global.css';
+import '@/styles/reset.css';
 export default function Layout() {
   return (
     <Provider store={store}>
@@ -31,7 +33,7 @@ export default function Layout() {
         persistor={persistor}
       >
         <div
-          className={styles.navs}
+          className={`app-custom-styles ${styles.navs}`}
           style={{ height: "100vh", overflow: "hidden" }}
         >
           {/* <ul>

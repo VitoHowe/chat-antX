@@ -3,6 +3,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  height: 100%;
   ul {
     padding: 0;
     list-style: none;
@@ -18,9 +19,10 @@
   margin: 0;
   padding: 0;
   height: 100%;
-  overflow: hidden;
+  /* 移除overflow: hidden，让全局背景正常显示 */
 }
 
 :global(#root) {
   height: 100vh;
+  min-height: 100vh;
 }
