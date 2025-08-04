@@ -13,4 +13,7 @@ export interface ApiConfigType {
   // 用户认证相关API
   UserLoginURL: string;        // 用户登录API端点
   UserRegisterURL: string;     // 用户注册API端点
+  
+  // 用户数据管理API
+  userDataURL: string;         // 用户数据API端点
 } 

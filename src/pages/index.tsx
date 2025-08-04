@@ -9,8 +9,8 @@
 import React from "react";
 import { Flex } from "antd";
 import styles from "./products.less";
-import ProductList from "../components/ProductList";
-import Header from "../components/Header";
+import ProductList from "../components/chat/ProductList";
+import Header from "../components/layout/Header";
 
 export default function Page() {
   return (

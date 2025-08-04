@@ -1,0 +1,39 @@
+/**
+ * ChatMainArea 组件样式
+ * 使用 .app-custom-styles 包装类提升优先级，避免使用 !important
+ */
+
+/* 聊天主区域容器 */
+.app-custom-styles .chat-main-area {
+  flex: 1;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: var(--backdrop-blur-md);
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-xl);
+  gap: var(--spacing-lg);
+}
+
+/* 消息列表 */
+.app-custom-styles .message-list {
+  flex: 1;
+  overflow: auto;
+  padding-inline: var(--spacing-lg);
+  scroll-behavior: smooth;
+}
+
+/* 模型选择器区域 */
+.app-custom-styles .model-selector-area {
+  gap: var(--spacing-md);
+}
+
+.app-custom-styles .model-select {
+  border-radius: var(--radius-md);
+  transition: var(--transition-fast);
+}
+
+.app-custom-styles .model-select:hover {
+  border-color: var(--color-primary);
+} 

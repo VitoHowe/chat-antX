@@ -1,0 +1,67 @@
+/**
+ * ProductList 组件样式
+ * 使用 .app-custom-styles 包装类提升优先级，避免使用 !important
+ */
+
+/* 主容器 */
+.app-custom-styles .product-list-container {
+  height: 100%;
+  /* 移除背景设置，使用全局背景 */
+  padding: var(--spacing-xl);
+  font-family: var(--font-family);
+  gap: var(--spacing-xl);
+}
+
+/* 编辑对话模态框 */
+.app-custom-styles .edit-conversation-modal .ant-modal-content {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+}
+
+.app-custom-styles .edit-conversation-modal .ant-modal-mask {
+  backdrop-filter: blur(4px);
+}
+
+.app-custom-styles .edit-conversation-modal .ant-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  background: var(--color-primary-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.app-custom-styles .edit-conversation-input {
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: 14px;
+  border: 2px solid var(--color-gray-200);
+  transition: var(--transition-normal);
+}
+
+.app-custom-styles .edit-conversation-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* 按钮样式 */
+.app-custom-styles .modal-ok-btn {
+  background: var(--color-primary-gradient);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  height: 36px;
+}
+
+.app-custom-styles .modal-cancel-btn {
+  border-radius: var(--radius-md);
+  height: 36px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .app-custom-styles .product-list-container {
+    padding: var(--spacing-md);
+    gap: var(--spacing-md);
+  }
+} 

@@ -8,7 +8,8 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 
 // 基础API地址 - 根据实际情况修改
 export const BASE_API_URL = isDevelopment 
-  ? 'https://chat.mnnu.net.cn'  // 开发环境地址
+  ? 'http://localhost:3000'  // 开发环境地址
+  // ? 'https://chat.mnnu.net.cn'  // 开发环境地址
   : 'https://chat.mnnu.net.cn';  // 生产环境地址
 
 

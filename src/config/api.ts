@@ -26,6 +26,9 @@ export const API_CONFIG: ApiConfigType = {
   // 用户认证相关API - 后端服务
   UserLoginURL: `${BASE_API_URL}/login`,
   UserRegisterURL: `${BASE_API_URL}/register`,
+  
+  // 用户数据API - 后端服务
+  userDataURL: `${BASE_API_URL}/api/user-data`,
 };
 
 export default API_CONFIG; 

@@ -25,7 +25,7 @@ import { useAppSelector } from '@/store';
 import { selectAuth } from '@/store/slices/authSlice';
 import { AuthService } from '@/services/auth.service';
 import { history } from 'umi';
-import '@/styles/components/Header.css';
+import '@/styles/components/layout/Header.css';
 
 const { Header: AntHeader } = Layout;
 const { Text, Title } = Typography;
