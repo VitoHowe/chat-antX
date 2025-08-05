@@ -3,6 +3,7 @@
   "author": "wyx96 <476939672@qq.com>",
   "scripts": {
     "dev": "umi dev",
+    "dev:remote": "cross-env UMI_API_MODE=remote umi dev",
     "build": "umi build",
     "postinstall": "umi setup",
     "setup": "umi setup",
@@ -21,6 +22,7 @@
     "@types/react": "^18.0.33",
     "@types/react-dom": "^18.0.11",
     "@umijs/plugins": "^4.4.11",
+    "cross-env": "^7.0.3",
     "typescript": "^5.0.3"
   }
 }

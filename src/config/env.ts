@@ -6,10 +6,12 @@
 // 判断当前环境
 const isDevelopment = process.env.NODE_ENV === 'development';
 
+// 判断API模式
+const isRemoteAPI = process.env.UMI_API_MODE === 'remote';
+console.log('isRemoteAPI', isRemoteAPI, process.env.UMI_API_MODE);
 // 基础API地址 - 根据实际情况修改
 export const BASE_API_URL = isDevelopment 
-  ? 'http://localhost:3000'  // 开发环境地址
-  // ? 'https://chat.mnnu.net.cn'  // 开发环境地址
+  ? (isRemoteAPI ? 'https://chat.mnnu.net.cn' : 'http://localhost:3000')  // 开发环境：根据API_MODE选择
   : 'https://chat.mnnu.net.cn';  // 生产环境地址
 
 

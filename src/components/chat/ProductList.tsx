@@ -184,12 +184,13 @@ export default () => {
     const currentIsRequesting = agent.isRequesting();
     
     // 当请求从进行中变为完成时，保存消息
-    // 添加额外条件：确保当前有活跃对话且消息列表不为空
+    // 添加额外条件：确保当前有活跃对话且消息列表不为空，且用户已在当前对话中交互
     if (prevIsRequestingRef.current && 
         !currentIsRequesting && 
         messages.length > 0 && 
         activeConversationKey &&
-        !loadingMessages) { // 确保不在加载历史消息时保存
+        !loadingMessages && // 确保不在加载历史消息时保存
+        hasUserInteractedInCurrentConversation) { // 确保用户已在当前对话中交互
       
       // 合并历史消息和新消息，然后保存
       const allMessages = mergeMessages(currentMessages, messages);
@@ -200,7 +201,7 @@ export default () => {
     }
     
     prevIsRequestingRef.current = currentIsRequesting;
-  }, [agent.isRequesting(), messages, currentMessages, activeConversationKey, loadingMessages, saveConversationMessages, updateCurrentMessages, mergeMessages]);
+  }, [agent.isRequesting(), messages, currentMessages, activeConversationKey, loadingMessages, hasUserInteractedInCurrentConversation, saveConversationMessages, updateCurrentMessages, mergeMessages]);
 
   // 监听活跃对话变化，确保状态同步
   React.useEffect(() => {
@@ -217,39 +218,11 @@ export default () => {
     }
   }, [activeConversationKey]);
 
-  // 获取显示用的消息：智能处理历史消息和新消息的显示
+  // 获取显示用的消息：直接使用currentMessages作为显示数据源
   const getDisplayMessages = React.useCallback(() => {
-    // 如果正在加载消息，只显示当前的历史消息
-    if (loadingMessages) {
-      return currentMessages;
-    }
-    
-    // 如果有历史消息，只有在用户在当前对话中发送了消息后，才合并新消息
-    if (currentMessages.length > 0) {
-      // 关键修复：只有在用户在当前对话中交互后，才合并useXChat的messages
-      // 这避免了切换对话时显示前一个对话的残留消息
-      if (hasUserInteractedInCurrentConversation) {
-        return mergeMessages(currentMessages, messages);
-      } else {
-        // 如果用户还没有在当前对话中交互，只显示历史消息
-        return currentMessages;
-      }
-    }
-    
-    // 如果没有历史消息，只有在用户交互后才显示useXChat的消息
-    if (hasUserInteractedInCurrentConversation && messages.length > 0) {
-      return messages.map(({ id, message }) => ({
-        id: String(id),
-        message: {
-          ...message,
-          isHistorical: false,
-        },
-      }));
-    }
-    
-    // 其他情况返回空数组（包括切换到空对话且用户未交互的情况）
-    return [];
-  }, [currentMessages, messages, loadingMessages, hasUserInteractedInCurrentConversation, mergeMessages]);
+    // 直接返回currentMessages，它包含了历史消息和实时同步的新消息
+    return currentMessages;
+  }, [currentMessages]);
 
   // 转换消息格式，确保id为string类型
   const formattedMessages = getDisplayMessages();
