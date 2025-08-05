@@ -58,31 +58,37 @@
   border-radius: var(--radius-md);
   margin: 4px 0;
   padding: var(--spacing-md) var(--spacing-lg);
-  background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border-light);
+  color: #000 !important;
   transition: var(--transition-normal);
   backdrop-filter: var(--backdrop-blur-sm);
+  background: rgba(102, 126, 234, 0.2) !important;
+  border-color: rgba(102, 126, 234, 0.3) !important;
 }
+
+/* .app-custom-styles .ant-conversations-item-active{
+  background: var( --color-primary-light) !important;
+} */
 
 .app-custom-styles .conversation-item:hover {
   background: var(--glass-bg) !important;
   transform: translateX(4px);
   border-color: var(--glass-border) !important;
+  
 }
 
-.app-custom-styles .conversation-item[data-active="true"] {
-  background: rgba(102, 126, 234, 0.2) !important;
-  border-color: rgba(102, 126, 234, 0.3) !important;
+.app-custom-styles .ant-conversations-item-active {
+  background: var(--glass-bg-dark);
+  border: 1px solid var(--glass-border-light);
   color: #fff !important;
 }
 
 .app-custom-styles .conversation-item .ant-typography {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: #0f1825 !important;
   font-weight: 500;
 }
 
-.app-custom-styles .conversation-item[data-active="true"] .ant-typography {
-  color: #fff !important;
+.app-custom-styles .ant-conversations-item-active .ant-typography {
+  color: rgba(255, 255, 255, 0.9) !important;
   font-weight: 600;
 }
 

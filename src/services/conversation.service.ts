@@ -33,6 +33,13 @@ export interface UpdateUserDataRequest {
   data?: any;
 }
 
+// 对话消息记录类型
+export interface ConversationMessage {
+  key: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
 /**
  * 对话数据API服务
  */
@@ -82,6 +89,29 @@ export const ConversationService = {
   },
 
   /**
+   * 获取指定对话的消息记录
+   * @param conversationKey 对话ID
+   * @returns 对话消息记录
+   */
+  async getConversationMessages(conversationKey: string): Promise<ConversationMessage[]> {
+    try {
+      const response = await httpService.get<UserDataResponse>(
+        `${API_CONFIG.userDataURL}/${conversationKey}`
+      );
+
+      if (response.success && response.data) {
+        // 从data字段中获取消息记录
+        return Array.isArray(response.data.data) ? response.data.data : [];
+      }
+
+      return [];
+    } catch (error) {
+      console.error('获取对话消息记录失败:', error);
+      return [];
+    }
+  },
+
+  /**
    * 创建新对话
    */
   async createConversation(label: string): Promise<{
@@ -99,7 +129,7 @@ export const ConversationService = {
         {
           key: uniqueKey, // 添加唯一key值
           field_name: label,
-          data: {}, // 空JSON对象
+          data: [], // 空数组作为初始消息记录
         } as CreateUserDataRequest
       );
 
@@ -163,6 +193,28 @@ export const ConversationService = {
       return response.success;
     } catch (error) {
       console.error('更新对话标题失败:', error);
+      return false;
+    }
+  },
+
+  /**
+   * 更新对话消息内容
+   * @param conversationKey 对话ID
+   * @param messages 消息数据
+   * @returns 是否更新成功
+   */
+  async updateConversationMessages(conversationKey: string, messages: Array<any>): Promise<boolean> {
+    try {
+      const response = await httpService.put(
+        `${API_CONFIG.userDataURL}/${conversationKey}`,
+        {
+          data: messages, // 将消息数组作为data传入
+        } as UpdateUserDataRequest
+      );
+
+      return response.success;
+    } catch (error) {
+      console.error('更新对话消息内容失败:', error);
       return false;
     }
   },

@@ -8,6 +8,8 @@ import { ReactNode } from 'react';
 export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  /** 是否为历史消息，历史消息不显示打字器效果 */
+  isHistorical?: boolean;
 }
 
 // 对话项类型
