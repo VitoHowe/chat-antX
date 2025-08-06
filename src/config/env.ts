@@ -7,8 +7,9 @@
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 // 判断API模式
-const isRemoteAPI = process.env.UMI_API_MODE === 'remote';
-console.log('isRemoteAPI', isRemoteAPI, process.env.UMI_API_MODE);
+const isRemoteAPI = process.env.UMI_ENV === 'remote';
+// console.log('isRemoteAPI', isRemoteAPI, process.env);
+console.log(process.env.UMI_ENV,process.env);
 // 基础API地址 - 根据实际情况修改
 export const BASE_API_URL = isDevelopment 
   ? (isRemoteAPI ? 'https://chat.mnnu.net.cn' : 'http://localhost:3000')  // 开发环境：根据API_MODE选择

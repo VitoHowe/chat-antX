@@ -3,11 +3,11 @@
   "author": "wyx96 <476939672@qq.com>",
   "scripts": {
     "dev": "umi dev",
-    "dev:remote": "cross-env UMI_API_MODE=remote umi dev",
+    "start": "cross-env UMI_ENV=remote umi dev",
+    "dev:remote": "cross-env NODE_ENV=remote umi dev",
     "build": "umi build",
     "postinstall": "umi setup",
-    "setup": "umi setup",
-    "start": "npm run dev"
+    "setup": "umi setup"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
