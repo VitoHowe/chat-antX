@@ -28,8 +28,10 @@ export default () => {
   const [value, setValue] = React.useState("");
   const abortController = useRef<AbortController | null>(null);
   const prevIsRequestingRef = useRef<boolean>(false);
-  // 跟踪用户是否在当前对话中发送了消息
-  const [hasUserInteractedInCurrentConversation, setHasUserInteractedInCurrentConversation] = React.useState<boolean>(false);
+  const hasInitializedRef = useRef<boolean>(false);
+  
+  // 消息历史记录 - 参考简化模式
+  const [messageHistory, setMessageHistory] = React.useState<Record<string, any>>({});
 
   // 使用自定义hooks
   const {
@@ -38,8 +40,6 @@ export default () => {
     editingConversation,
     isEditModalVisible,
     loading,
-    currentMessages,
-    loadingMessages,
     createConversation,
     startEditConversation,
     saveEditConversation,
@@ -48,9 +48,7 @@ export default () => {
     changeConversation,
     updateEditingLabel,
     saveConversationMessages,
-    loadConversationMessages,
-    updateCurrentMessages,
-    clearCurrentMessages,
+    getConversationMessages,
   } = useConversations();
 
   const {
@@ -69,7 +67,7 @@ export default () => {
     dangerouslyApiKey: `Bearer ${localStorage.getItem("authToken")}`,
   });
 
-  const { onRequest, messages } = useXChat({
+  const { onRequest, messages, setMessages } = useXChat({
     agent,
     requestFallback: (_, { error }) => {
       if (error.name === "AbortError") {
@@ -129,103 +127,90 @@ export default () => {
     },
   });
 
-  // 消息合并函数：将历史消息和新消息合并，避免重复
-  const mergeMessages = React.useCallback((
-    historyMessages: Array<{ id: string; message: Message }>,
-    newMessages: Array<{ id: any; message: Message }>
-  ) => {
-    // 将新消息标记为非历史消息
-    const formattedNewMessages = newMessages.map(({ id, message }) => ({
-      id: String(id),
-      message: {
-        ...message,
-        isHistorical: false,
-      },
-    }));
-
-    // 如果没有历史消息，直接返回新消息
-    if (historyMessages.length === 0) {
-      return formattedNewMessages;
+  // 简化的消息历史管理 - 参考提供的模式
+  React.useEffect(() => {
+    if (messages?.length && activeConversationKey) {
+      setMessageHistory((prev) => ({
+        ...prev,
+        [activeConversationKey]: messages,
+      }));
     }
+  }, [messages, activeConversationKey]);
 
-    // 如果没有新消息，直接返回历史消息
-    if (formattedNewMessages.length === 0) {
-      return historyMessages;
-    }
-
-    // 更智能的去重逻辑：查找历史消息和新消息的分界点
-    // 从新消息的开头开始，找到第一条不在历史消息中的消息
-    let startIndex = 0;
-    for (let i = 0; i < formattedNewMessages.length; i++) {
-      const newMsg = formattedNewMessages[i];
-      const isDuplicate = historyMessages.some(histMsg => 
-        histMsg.message.role === newMsg.message.role &&
-        histMsg.message.content === newMsg.message.content
-      );
-      
-      if (!isDuplicate) {
-        startIndex = i;
-        break;
-      }
-      
-      // 如果找到了重复的消息，继续查找
-      if (i === formattedNewMessages.length - 1) {
-        // 所有新消息都是重复的
-        return historyMessages;
-      }
-    }
-
-    // 合并消息：历史消息 + 新的不重复消息
-    return [...historyMessages, ...formattedNewMessages.slice(startIndex)];
-  }, []);
-
-  // 监听请求状态变化，自动保存消息
+  // 监听请求状态变化，在请求完成时保存消息
   React.useEffect(() => {
     const currentIsRequesting = agent.isRequesting();
     
     // 当请求从进行中变为完成时，保存消息
-    // 添加额外条件：确保当前有活跃对话且消息列表不为空，且用户已在当前对话中交互
-    if (prevIsRequestingRef.current && 
-        !currentIsRequesting && 
-        messages.length > 0 && 
-        activeConversationKey &&
-        !loadingMessages && // 确保不在加载历史消息时保存
-        hasUserInteractedInCurrentConversation) { // 确保用户已在当前对话中交互
+    if (prevIsRequestingRef.current && !currentIsRequesting) {
+      // 在请求完成时获取最新的消息和对话状态
+      const currentMessages = messages;
+      const currentConversationKey = activeConversationKey;
       
-      // 合并历史消息和新消息，然后保存
-      const allMessages = mergeMessages(currentMessages, messages);
-      saveConversationMessages(allMessages);
-      
-      // 更新本地消息状态
-      updateCurrentMessages(allMessages);
+      if (currentMessages.length > 0 && currentConversationKey) {
+        // 转换消息格式用于保存
+        const messagesToSave = currentMessages.map((item, index) => ({
+          message: {
+            role: item.message?.role || "user",
+            content: item.message?.content || "",
+          },
+        }));
+        
+        saveConversationMessages(messagesToSave);
+      }
     }
     
     prevIsRequestingRef.current = currentIsRequesting;
-  }, [agent.isRequesting(), messages, currentMessages, activeConversationKey, loadingMessages, hasUserInteractedInCurrentConversation, saveConversationMessages, updateCurrentMessages, mergeMessages]);
+  }, [agent.isRequesting()]);
 
-  // 监听活跃对话变化，确保状态同步
+  // 简化的对话切换处理
+  const handleChangeConversation = React.useCallback(async (conversationKey: string) => {
+    // 取消当前请求
+    abortController.current?.abort();
+    
+    // 延迟切换，避免时序问题
+    setTimeout(async () => {
+      changeConversation(conversationKey);
+      
+      // 加载历史消息
+      const historyMessages = await getConversationMessages(conversationKey);
+      
+      // 将历史消息转换为useXChat需要的格式
+      const formattedHistoryMessages = historyMessages.map((msg: any, index: number) => ({
+        id: `history-${conversationKey}-${index}`,
+        message: {
+          role: msg.role,
+          content: msg.content,
+          isHistorical: true,
+        },
+        status: 'success' as const,
+      }));
+      
+      setMessages(formattedHistoryMessages);
+    }, 100);
+  }, [changeConversation, getConversationMessages, setMessages]);
+
+  // 在初始化完成时加载默认对话的历史消息（只执行一次）
   React.useEffect(() => {
-    if (activeConversationKey) {
-      // 当对话切换时，重置请求状态引用
-      prevIsRequestingRef.current = false;
-      
-      // 重置用户交互状态，确保不会显示前一个对话的useXChat消息
-      setHasUserInteractedInCurrentConversation(false);
-      
-      // 清空当前显示的消息，等待历史消息加载
-      // 这可以避免显示前一个对话的useXChat消息
-      setValue(""); // 清空输入框
+    if (!loading && activeConversationKey && !hasInitializedRef.current) {
+      // 标记已经初始化过
+      hasInitializedRef.current = true;
+      // 初始化完成后，加载默认对话的历史消息
+      handleChangeConversation(activeConversationKey);
     }
-  }, [activeConversationKey]);
+  }, [loading, activeConversationKey, handleChangeConversation]);
 
-  // 获取显示用的消息：直接使用currentMessages作为显示数据源
-  const getDisplayMessages = React.useCallback(() => {
-    // 直接返回currentMessages，它包含了历史消息和实时同步的新消息
-    return currentMessages;
-  }, [currentMessages]);
-
-  // 转换消息格式，确保id为string类型
-  const formattedMessages = getDisplayMessages();
+  // 转换消息格式用于显示
+  const formattedMessages = React.useMemo(() => {
+    return messages?.map((item, index) => ({
+      id: String(item.id || index),
+      message: {
+        role: item.message?.role || "user",
+        content: item.message?.content || "",
+        isHistorical: (item.message as any)?.isHistorical || false,
+      },
+    })) || [];
+  }, [messages]);
 
   const rolesAsFunction = (bubbleData: BubbleProps, index: number) => {
     switch (bubbleData.role) {
@@ -233,12 +218,11 @@ export default () => {
         // 获取对应的消息数据以检查是否为历史消息
         const messageData = formattedMessages[index];
         const isHistorical = messageData?.message?.isHistorical || false;
-        
+        console.log(messages,'formattedMessages',messageData);
         return {
           placement: "start" as const,
           avatar: { icon: <UserOutlined />, style: { background: "#fde3cf" } },
-          // 只有非历史消息才显示打字效果
-          typing: isHistorical ? false : { step: 1, interval: 20 },
+          typing: isHistorical ? false : { step: 1, interval: 20 }, // 简化打字效果
           style: {
             maxWidth: 600,
           },
@@ -254,9 +238,6 @@ export default () => {
   };
 
   const handleSubmit = (content: string) => {
-    // 标记用户在当前对话中开始了交互
-    setHasUserInteractedInCurrentConversation(true);
-    
     onRequest({
       stream: true,
       message: {
@@ -302,7 +283,7 @@ export default () => {
             conversations={conversations}
             activeConversationKey={activeConversationKey}
             onCreateConversation={createConversation}
-            onChangeConversation={changeConversation}
+            onChangeConversation={handleChangeConversation}
             onStartEditConversation={startEditConversation}
             onDeleteConversation={deleteConversation}
           />
@@ -325,7 +306,6 @@ export default () => {
             onSearchModels={searchModels}
           />
         </Flex>
-
         {/* 编辑对话标题的模态框 */}
         <EditConversationModal
           visible={isEditModalVisible}
@@ -334,7 +314,6 @@ export default () => {
           onCancel={cancelEditConversation}
           onLabelChange={updateEditingLabel}
         />
-
         <ThoughtChain />
       </XProvider>
     </>

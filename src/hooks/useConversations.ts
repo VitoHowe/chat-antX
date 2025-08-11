@@ -1,7 +1,7 @@
 /**
  * 对话管理自定义Hook
  * 封装对话的增删改查逻辑，集成后端API
- * 每个对话作为独立的用户数据记录管理
+ * 专注于对话管理，不处理消息内容
  */
 
 import { useState, useCallback, useEffect } from 'react';
@@ -20,43 +20,6 @@ export const useConversations = () => {
   const [isEditModalVisible, setIsEditModalVisible] = useState<boolean>(false);
   // 加载状态
   const [loading, setLoading] = useState<boolean>(true);
-  // 当前对话的消息记录
-  const [currentMessages, setCurrentMessages] = useState<Array<{ id: string; message: Message }>>([]);
-  // 历史消息加载状态
-  const [loadingMessages, setLoadingMessages] = useState<boolean>(false);
-
-  // 加载指定对话的历史消息记录
-  const loadConversationMessages = useCallback(async (conversationKey: string) => {
-    setLoadingMessages(true);
-    try {
-      const historyMessages = await ConversationService.getConversationMessages(conversationKey);
-      if(historyMessages.length !== 0){
-         // 将历史消息转换为组件需要的格式
-         const formattedMessages: Array<{ id: string; message: Message }> = historyMessages.map((msg, index) => ({
-          id: `history-${conversationKey}-${index}`,
-        message: {
-          role: msg.role,
-          content: msg.content,
-          isHistorical: true, // 标记为历史消息
-        },
-      }));
-      setCurrentMessages(formattedMessages);
-      return formattedMessages;
-      }else{
-        setCurrentMessages([]);
-        return [];
-      }
-       
-
-      
-    } catch (error) {
-      console.error('加载对话历史记录失败:', error);
-      setCurrentMessages([]);
-      return [];
-    } finally {
-      setLoadingMessages(false);
-    }
-  }, []);
 
   // 初始化对话列表
   const initializeConversations = useCallback(async () => {
@@ -70,11 +33,6 @@ export const useConversations = () => {
         // 如果有对话数据，使用它们
         setConversations(userConversations);
         setActiveConversationKey(activeKey);
-        
-        // 加载活跃对话的历史记录
-        if (activeKey) {
-          await loadConversationMessages(activeKey);
-        }
       } else {
         // 如果没有对话数据，创建一个默认对话
         const { conversations: defaultConversations, activeConversationKey: defaultKey } = 
@@ -82,8 +40,6 @@ export const useConversations = () => {
         
         setConversations(defaultConversations);
         setActiveConversationKey(defaultKey);
-        
-        // 新创建的对话没有历史记录，无需加载
       }
     } catch (error) {
       console.error('初始化对话列表失败:', error);
@@ -105,7 +61,7 @@ export const useConversations = () => {
     } finally {
       setLoading(false);
     }
-  }, [loadConversationMessages]);
+  }, []);
 
   useEffect(() => {
     initializeConversations();
@@ -197,21 +153,10 @@ export const useConversations = () => {
   // 切换当前对话
   const changeConversation = useCallback(async (conversationKey: string, callback?: (success: boolean) => void) => {
     if (conversationKey !== activeConversationKey) {
-      try {
-        // 设置新的活跃对话
-        setActiveConversationKey(conversationKey);
-        
-        // 加载新对话的历史记录
-        await loadConversationMessages(conversationKey);
-        
-        if (callback) {
-          callback(true);
-        }
-      } catch (error) {
-        console.error('切换对话时加载历史记录失败:', error);
-        if (callback) {
-          callback(false);
-        }
+      setActiveConversationKey(conversationKey);
+      
+      if (callback) {
+        callback(true);
       }
     } else {
       // 如果是同一个对话，直接调用callback
@@ -219,7 +164,7 @@ export const useConversations = () => {
         callback(true);
       }
     }
-  }, [activeConversationKey, loadConversationMessages]);
+  }, [activeConversationKey]);
 
   // 更新编辑中的对话标题
   const updateEditingLabel = useCallback((newLabel: string) => {
@@ -232,7 +177,7 @@ export const useConversations = () => {
   }, [editingConversation]);
 
   // 保存当前对话的消息记录
-  const saveConversationMessages = useCallback(async (messages: Array<{ id: string; message: Message }>) => {
+  const saveConversationMessages = useCallback(async (messages: Array<{ message: { role: string; content: string } }>) => {
     if (!activeConversationKey || messages.length === 0) return;
 
     try {
@@ -240,7 +185,6 @@ export const useConversations = () => {
       const messageData = messages.map(({ message }) => ({
         role: message.role,
         content: message.content,
-        // 不保存isHistorical字段，因为保存后的消息在下次加载时都是历史消息
       }));
 
       const success = await ConversationService.updateConversationMessages(
@@ -258,14 +202,15 @@ export const useConversations = () => {
     }
   }, [activeConversationKey]);
 
-  // 更新当前消息状态（用于与useXChat的消息合并）
-  const updateCurrentMessages = useCallback((messages: Array<{ id: string; message: Message }>) => {
-    setCurrentMessages(messages);
-  }, []);
-
-  // 清空当前消息
-  const clearCurrentMessages = useCallback(() => {
-    setCurrentMessages([]);
+  // 获取指定对话的历史消息
+  const getConversationMessages = useCallback(async (conversationKey: string) => {
+    try {
+      const historyMessages = await ConversationService.getConversationMessages(conversationKey);
+      return historyMessages || [];
+    } catch (error) {
+      console.error('获取对话历史记录失败:', error);
+      return [];
+    }
   }, []);
 
   return {
@@ -274,8 +219,6 @@ export const useConversations = () => {
     editingConversation,
     isEditModalVisible,
     loading,
-    currentMessages,
-    loadingMessages,
     createConversation,
     startEditConversation,
     saveEditConversation,
@@ -284,8 +227,6 @@ export const useConversations = () => {
     changeConversation,
     updateEditingLabel,
     saveConversationMessages,
-    loadConversationMessages,
-    updateCurrentMessages,
-    clearCurrentMessages,
+    getConversationMessages,
   };
 }; 
