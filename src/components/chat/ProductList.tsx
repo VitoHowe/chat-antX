@@ -29,6 +29,7 @@ export default () => {
   const abortController = useRef<AbortController | null>(null);
   const prevIsRequestingRef = useRef<boolean>(false);
   const hasInitializedRef = useRef<boolean>(false);
+  const isDeletingConversationRef = useRef<boolean>(false);
   
   // 消息历史记录 - 参考简化模式
   const [messageHistory, setMessageHistory] = React.useState<Record<string, any>>({});
@@ -130,12 +131,17 @@ export default () => {
   // 简化的消息历史管理 - 参考提供的模式
   React.useEffect(() => {
     if (messages?.length && activeConversationKey) {
-      setMessageHistory((prev) => ({
-        ...prev,
-        [activeConversationKey]: messages,
-      }));
+      // 检查当前对话是否还存在
+      const conversationExists = conversations.some(conv => conv.key === activeConversationKey);
+      
+      if (conversationExists) {
+        setMessageHistory((prev) => ({
+          ...prev,
+          [activeConversationKey]: messages,
+        }));
+      }
     }
-  }, [messages, activeConversationKey]);
+  }, [messages, activeConversationKey, conversations]);
 
   // 监听请求状态变化，在请求完成时保存消息
   React.useEffect(() => {
@@ -147,7 +153,10 @@ export default () => {
       const currentMessages = messages;
       const currentConversationKey = activeConversationKey;
       
-      if (currentMessages.length > 0 && currentConversationKey) {
+      // 检查当前对话是否还存在
+      const conversationExists = conversations.some(conv => conv.key === currentConversationKey);
+      
+      if (currentMessages.length > 0 && currentConversationKey && conversationExists) {
         // 转换消息格式用于保存
         const messagesToSave = currentMessages.map((item, index) => ({
           message: {
@@ -161,10 +170,77 @@ export default () => {
     }
     
     prevIsRequestingRef.current = currentIsRequesting;
-  }, [agent.isRequesting()]);
+  }, [agent.isRequesting(), activeConversationKey, conversations, messages]);
+
+  // 创建新对话并清空消息
+  const handleCreateConversation = React.useCallback(async () => {
+    // 先清空当前消息
+    setMessages([]);
+    
+    // 创建新对话
+    await createConversation();
+  }, [createConversation]);
+
+  // 删除对话并切换到下一个对话
+  const handleDeleteConversation = React.useCallback(async (conversationKey: string) => {
+    // 设置删除标记，防止其他地方的查询
+    isDeletingConversationRef.current = true;
+    
+    try {
+      // 检查是否是当前活跃的对话
+      const isDeletingActive = conversationKey === activeConversationKey;
+      
+      // 如果是删除当前活跃对话，先清空消息
+      if (isDeletingActive) {
+        setMessages([]);
+      }
+      
+      // 执行删除操作
+      const success = await deleteConversation(conversationKey);
+      
+      // 只有在删除成功且删除的是当前活跃对话时，才加载新对话的消息
+      if (success && isDeletingActive) {
+        // 等待一小段时间让状态完全更新
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // 获取删除后的新活跃对话
+        const newConversations = conversations.filter(item => item.key !== conversationKey);
+        if (newConversations.length > 0) {
+          const newActiveKey = newConversations[0].key;
+          
+          // 直接调用 changeConversation 来更新活跃对话
+          await changeConversation(newActiveKey);
+          
+          // 然后加载新对话的历史消息
+          const historyMessages = await getConversationMessages(newActiveKey);
+          
+          // 将历史消息转换为useXChat需要的格式
+          const formattedHistoryMessages = historyMessages.map((msg: any, index: number) => ({
+            id: `history-${newActiveKey}-${index}`,
+            message: {
+              role: msg.role,
+              content: msg.content,
+              isHistorical: true,
+            },
+            status: 'success' as const,
+          }));
+          
+          setMessages(formattedHistoryMessages);
+        }
+      }
+    } finally {
+      // 清除删除标记
+      isDeletingConversationRef.current = false;
+    }
+  }, [deleteConversation, conversations, activeConversationKey, getConversationMessages, changeConversation]);
 
   // 简化的对话切换处理
   const handleChangeConversation = React.useCallback(async (conversationKey: string) => {
+    // 如果正在删除对话，不执行切换
+    if (isDeletingConversationRef.current) {
+      return;
+    }
+    
     // 取消当前请求
     abortController.current?.abort();
     
@@ -282,10 +358,10 @@ export default () => {
           <ConversationSidebar
             conversations={conversations}
             activeConversationKey={activeConversationKey}
-            onCreateConversation={createConversation}
+            onCreateConversation={handleCreateConversation}
             onChangeConversation={handleChangeConversation}
             onStartEditConversation={startEditConversation}
-            onDeleteConversation={deleteConversation}
+            onDeleteConversation={handleDeleteConversation}
           />
 
           {/* 聊天主区域 */}

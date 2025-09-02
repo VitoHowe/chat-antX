@@ -129,7 +129,7 @@ export const useConversations = () => {
     // 如果只有一个对话，不允许删除
     if (conversations.length <= 1) {
       message.warning("至少保留一个对话");
-      return;
+      return false;
     }
 
     const success = await ConversationService.deleteConversation(conversationKey);
@@ -145,8 +145,10 @@ export const useConversations = () => {
       }
       
       message.success("对话已删除");
+      return true;
     } else {
       message.error("删除失败，请稍后重试");
+      return false;
     }
   }, [conversations, activeConversationKey]);
 
