@@ -1,8 +1,23 @@
+/*
+ * @Description: 
+ * @Version: 2.0
+ * @Autor: MyStery
+ * @Date: 2025-09-02 16:22:07
+ * @LastEditors: MyStery
+ * @LastEditTime: 2025-09-15 14:54:34
+ */
 /**
  * 项目通用类型定义
  */
 
 import { ReactNode } from 'react';
+
+// 思维链项类型
+export interface ThinkItem {
+  title?: string;
+  description?: string;
+  content: string;
+}
 
 // 消息类型
 export interface Message {
@@ -10,6 +25,8 @@ export interface Message {
   content: string;
   /** 是否为历史消息，历史消息不显示打字器效果 */
   isHistorical?: boolean;
+  /** 思维链内容，仅assistant角色可能有 */
+  think?: ThinkItem[];
 }
 
 // 对话项类型

@@ -20,11 +20,12 @@ import {
   Sender,
   Prompts,
   Suggestion,
+  ThoughtChain,
 } from '@ant-design/x';
 import type { BubbleProps } from '@ant-design/x';
 import type { Message } from '@/types';
 import '@/styles/components/chat/ChatMainArea.css';
-
+import markdownit from 'markdown-it';
 interface ChatMainAreaProps {
   /** 消息列表 */
   messages: Array<{ id: string; message: Message }>;
@@ -55,7 +56,7 @@ interface ChatMainAreaProps {
   /** 模型搜索处理函数 */
   onSearchModels: (search: string) => void;
 }
-
+const md = markdownit({ html: true, breaks: true });
 const ChatMainArea: React.FC<ChatMainAreaProps> = ({
   messages,
   value,
@@ -74,6 +75,44 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 }) => {
   const listRef = useRef<GetRef<typeof Bubble.List>>(null);
 
+  // 处理消息项，将think内容转换为特殊的渲染格式
+  const processedItems = messages.map(({ id, message }) => {
+    // 如果是assistant角色且有think属性，创建一个包含ThoughtChain的特殊内容
+    if (message.role === 'assistant' && message.think && message.think.length > 0) {
+      const thoughtItems = message.think.map((item, index) => ({
+        key: `${id}-think-${index}`,
+        title: item.title || `思考步骤 ${index + 1}`,
+        description: item.description || '',
+        content: item.content || ''
+      }));
+      
+      // 创建一个包含ThoughtChain和原始内容的React元素作为content
+      const combinedContent = (
+        <div style={{ width: '100%' }}>
+          <ThoughtChain items={thoughtItems} />
+          {message.content && (
+            <div style={{ marginTop: 16 }} dangerouslySetInnerHTML={{ __html: md.render(message.content) }}>
+              {/* {message.content} */}
+            </div>
+          )}
+        </div>
+      );
+      
+      return {
+        key: id,
+        role: message.role,
+        content: combinedContent,
+      };
+    }
+    
+    // 普通消息直接返回
+    return {
+      key: id,
+      role: message.role || "user",
+      content: message.content || "",
+    };
+  });
+
   return (
     <Flex vertical className="chat-main-area">
       {/* 消息列表 */}
@@ -81,13 +120,7 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
         ref={listRef}
         className="message-list"
         roles={rolesAsFunction}
-        items={messages.map(({ id, message }) => {
-          return {
-            key: id,
-            role: message.role || "user",
-            content: message.content || "",
-          };
-        })}
+        items={processedItems}
       />
       
       {/* 提示功能 */}

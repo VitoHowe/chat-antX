@@ -23,6 +23,9 @@
   padding-inline: var(--spacing-lg);
   scroll-behavior: smooth;
 }
+.app-custom-styles .message-list .ant-bubble-start {
+  max-width: 70% !important;
+}
 
 /* 模型选择器区域 */
 .app-custom-styles .model-selector-area {

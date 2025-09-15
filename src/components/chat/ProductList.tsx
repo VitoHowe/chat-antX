@@ -1,7 +1,6 @@
 import React, { useRef } from "react";
 import {
   XProvider,
-  ThoughtChain,
 } from "@ant-design/x";
 import {
   Flex,
@@ -276,16 +275,43 @@ export default () => {
     }
   }, [loading, activeConversationKey, handleChangeConversation]);
 
-  // 转换消息格式用于显示
+  // 转换消息格式用于显示 - 处理think标签内容
   const formattedMessages = React.useMemo(() => {
-    return messages?.map((item, index) => ({
-      id: String(item.id || index),
-      message: {
-        role: item.message?.role || "user",
-        content: item.message?.content || "",
+    return messages?.map((item, index) => {
+      const content = item.message?.content || "";
+      const role = item.message?.role || "user";
+      
+      // 提取<think>标签中的内容
+      const thinkMatch = content.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
+      
+      // 从content中移除<think>标签及其内容，得到干净的content
+      const cleanContent = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim();
+      
+      // 构建消息对象
+      const messageObj: any = {
+        role: role,
+        content: cleanContent,
         isHistorical: (item.message as any)?.isHistorical || false,
-      },
-    })) || [];
+      };
+      
+      // 如果是assistant角色且有think内容，添加think属性
+      if (role === 'assistant' && thinkMatch && thinkMatch[1]) {
+        const thinkContent = thinkMatch[1].trim();
+        if (thinkContent) {
+          // 将think内容解析为结构化数据
+          messageObj.think = [{
+            title: '思考过程',
+            description: 'AI 正在分析和推理...',
+            content: thinkContent
+          }];
+        }
+      }
+      
+      return {
+        id: String(item.id || index),
+        message: messageObj,
+      };
+    }) || [];
   }, [messages]);
 
   const rolesAsFunction = (bubbleData: BubbleProps, index: number) => {
@@ -390,7 +416,6 @@ export default () => {
           onCancel={cancelEditConversation}
           onLabelChange={updateEditingLabel}
         />
-        <ThoughtChain />
       </XProvider>
     </>
   );
