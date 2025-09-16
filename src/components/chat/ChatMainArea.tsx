@@ -3,29 +3,21 @@
  * 负责消息展示、提示功能、模型选择和消息发送等功能
  */
 
-import React, { useRef } from 'react';
-import {
-  Flex,
-  Select,
-  Space,
-} from 'antd';
-import type { GetRef } from 'antd';
-import {
-  BulbOutlined,
-  SmileOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
+import React, { useRef } from "react";
+import { Flex, Select, Space } from "antd";
+import type { GetRef } from "antd";
+import { BulbOutlined, SmileOutlined, UserOutlined } from "@ant-design/icons";
 import {
   Bubble,
   Sender,
   Prompts,
   Suggestion,
   ThoughtChain,
-} from '@ant-design/x';
-import type { BubbleProps } from '@ant-design/x';
-import type { Message } from '@/types';
-import '@/styles/components/chat/ChatMainArea.css';
-import markdownit from 'markdown-it';
+} from "@ant-design/x";
+import type { BubbleProps } from "@ant-design/x";
+import type { Message } from "@/types";
+import "@/styles/components/chat/ChatMainArea.css";
+import markdownit from "markdown-it";
 interface ChatMainAreaProps {
   /** 消息列表 */
   messages: Array<{ id: string; message: Message }>;
@@ -78,33 +70,40 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
   // 处理消息项，将think内容转换为特殊的渲染格式
   const processedItems = messages.map(({ id, message }) => {
     // 如果是assistant角色且有think属性，创建一个包含ThoughtChain的特殊内容
-    if (message.role === 'assistant' && message.think && message.think.length > 0) {
+    if (
+      message.role === "assistant" &&
+      message.think &&
+      message.think.length > 0
+    ) {
       const thoughtItems = message.think.map((item, index) => ({
         key: `${id}-think-${index}`,
         title: item.title || `思考步骤 ${index + 1}`,
-        description: item.description || '',
-        content: item.content || ''
+        description: item.description || "",
+        content: item.content || "",
       }));
-      
+
       // 创建一个包含ThoughtChain和原始内容的React元素作为content
       const combinedContent = (
-        <div style={{ width: '100%' }}>
+        <div style={{ width: "100%" }}>
           <ThoughtChain items={thoughtItems} />
           {message.content && (
-            <div style={{ marginTop: 16 }} dangerouslySetInnerHTML={{ __html: md.render(message.content) }}>
+            <div
+              style={{ marginTop: 16 }}
+              dangerouslySetInnerHTML={{ __html: md.render(message.content) }}
+            >
               {/* {message.content} */}
             </div>
           )}
         </div>
       );
-      
+
       return {
         key: id,
         role: message.role,
         content: combinedContent,
       };
     }
-    
+
     // 普通消息直接返回
     return {
       key: id,
@@ -122,7 +121,7 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
         roles={rolesAsFunction}
         items={processedItems}
       />
-      
+
       {/* 提示功能 */}
       <Prompts
         items={[
@@ -137,8 +136,11 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
             label: "Tell me a Joke",
           },
         ]}
+        onItemClick={(info) => {
+          onSubmit(info.data.label as string);
+        }}
       />
-      
+
       {/* 模型选择器区域 */}
       <Space wrap className="model-selector-area">
         <Select
@@ -193,4 +195,4 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
   );
 };
 
-export default ChatMainArea; 
+export default ChatMainArea;
